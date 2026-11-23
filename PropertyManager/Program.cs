@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropertyManager.Data;
+using PropertyManager.Data.Seeds;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,20 +17,19 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddControllersWithViews();
 
+builder.Services.RegisterSeeders();
+
 var app = builder.Build();
 
-// Create DB, apply migrations, and seed data idempotently on start (outside Production)
-if (!app.Environment.IsProduction())
-{
-    using var scope = app.Services.CreateScope();
-    var services = scope.ServiceProvider;
-    var db = services.GetRequiredService<ApplicationDbContext>();
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
-    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+// TODO consider how this should run in prod
+// Create DB, apply migrations, and seed data idempotently on start
+using var scope = app.Services.CreateScope();
+var services = scope.ServiceProvider;
+var db = services.GetRequiredService<ApplicationDbContext>();
+await db.Database.MigrateAsync();
 
-    await db.Database.MigrateAsync();
-    //await DbSeeder.SeedAsync(db, userManager, roleManager);
-}
+// Seed the database with initial data
+await app.SeedDatabaseAsync();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

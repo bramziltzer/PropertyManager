@@ -1,0 +1,23 @@
+﻿namespace PropertyManager.Data.Seeds;
+
+public static class SeedExtensions
+{
+    public static IServiceCollection RegisterSeeders(this IServiceCollection services)
+    {
+        // register database seeders here
+        services.AddScoped<ISeeder, RoleSeeder>();
+
+        return services;
+    }
+
+    public static async Task SeedDatabaseAsync(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+        var services = scope.ServiceProvider;
+
+        foreach (var seeder in services.GetServices<ISeeder>())
+        {
+            await seeder.Seed();
+        }
+    }
+}

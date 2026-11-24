@@ -1,4 +1,6 @@
-﻿namespace PropertyManager.Domain;
+﻿using PropertyManager.Domain.Exceptions;
+
+namespace PropertyManager.Domain;
 
 public class RentalApplication
 {
@@ -18,6 +20,20 @@ public class RentalApplication
     public ApplicationStatus Status { get; private set; }
 
     public string? PropertyManagerComments { get; private set; }
+    
+    public List<ApplicationStatusChange> History { get; set; }
+    // State Machine:
+    private static readonly Dictionary<(ApplicationStatus, ApplicationAction), ApplicationStatus> Transitions = new()
+    {
+        [(ApplicationStatus.Draft, ApplicationAction.Submit)] = ApplicationStatus.Submitted,
+        [(ApplicationStatus.Draft, ApplicationAction.Withdraw)] = ApplicationStatus.Withdrawn,
+        [(ApplicationStatus.Returned, ApplicationAction.Submit)] = ApplicationStatus.Submitted,
+        [(ApplicationStatus.Returned, ApplicationAction.Withdraw)] = ApplicationStatus.Withdrawn,
+        [(ApplicationStatus.Submitted, ApplicationAction.Withdraw)] = ApplicationStatus.Withdrawn,
+        [(ApplicationStatus.Submitted, ApplicationAction.Return)] = ApplicationStatus.Returned,
+        [(ApplicationStatus.Submitted, ApplicationAction.Approve)] = ApplicationStatus.Approved,
+        [(ApplicationStatus.Submitted, ApplicationAction.Deny)] = ApplicationStatus.Denied,
+    };
 
     /// <summary>
     /// Updates the application status and property manager comments.
@@ -26,16 +42,23 @@ public class RentalApplication
     /// <param name="propertyManagerComments">Comments from the property manager.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="newStatus"/> is <see cref="ApplicationStatus.Returned"/> or <see
     /// cref="ApplicationStatus.Denied"/> and <paramref name="propertyManagerComments"/> is null, empty, or whitespace.</exception>
-    public void UpdateStatus(ApplicationStatus newStatus, string? propertyManagerComments = null)
+    public void ApplyAction(ApplicationAction action, string appliedBy, DateTime now, string? comments = null)
     {
-        // TODO transition check
-        if (ApplicationStatusRules.RequiresComment(newStatus) && string.IsNullOrWhiteSpace(propertyManagerComments))
+        if (!Transitions.TryGetValue((this.Status, action), out ApplicationStatus nextStatus)) 
         {
-            throw new ArgumentException("Property manager comments are required for the new application status {0}.", nameof(newStatus));
+            throw new InvalidStatusTransitionException(this.Status, action);
         }
-        Status = newStatus;
-        PropertyManagerComments = propertyManagerComments;
-        // TODO create history audit (who, when, comment) => need some kind of history table then...
+
+        if (ApplicationStatusRules.RequiresComment(nextStatus) && string.IsNullOrWhiteSpace(comments))
+        {
+            // TODO change this to custom exception
+            throw new ArgumentException("Property manager comments are required for the new application status {0}.", nameof(nextStatus));
+        }
+
+        History.Add(new ApplicationStatusChange(Status, nextStatus, comments, appliedBy, now));
+        Status = nextStatus;
+        PropertyManagerComments = comments; // todo this may be best kept in the history table
+
         // replace status and comments properties with a status collection with date and user
     }
 }

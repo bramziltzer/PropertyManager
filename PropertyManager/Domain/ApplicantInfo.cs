@@ -2,4 +2,4 @@
 
 namespace PropertyManager.Domain;
 
-public record ApplicantInfo(Guid UserId, string FirstName, string LastName, string Email, Address Address);
+public record ApplicantInfo(Guid UserId, string FirstName, string LastName, string Email, string PhoneNumber, Address Address);

@@ -1,15 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿namespace PropertyManager.Domain;
 
-namespace PropertyManager.Domain;
-
-public class RentalLease
+public class Lease
 {
     public Guid LeaseId { get; set; }
 
     public Guid LesseeId { get; set; }
-
-    // navigation property
-    public IdentityUser Lessee { get; set; }
 
     // TODO maybe remove this?
     public Guid? AssociatedApplicationId { get; set; }

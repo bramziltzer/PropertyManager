@@ -306,8 +306,16 @@ namespace PropertyManager.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("ApplicantUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("RentalUnitId")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("Status")
                         .HasColumnType("int")
@@ -318,6 +326,10 @@ namespace PropertyManager.Data.Migrations
                     b.HasIndex("RentalUnitId");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("ApplicantUserId", "RentalUnitId")
+                        .IsUnique()
+                        .HasFilter("[ApplicationStatusId] IN (1, 2, 3)");
 
                     b.ToTable("RentalApplications");
                 });
@@ -380,6 +392,11 @@ namespace PropertyManager.Data.Migrations
                     b.Property<int>("PropertyId")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.Property<string>("UnitNumber")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -441,8 +458,10 @@ namespace PropertyManager.Data.Migrations
                         .HasColumnType("int")
                         .HasColumnName("UnitTypeId");
 
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -584,6 +603,12 @@ namespace PropertyManager.Data.Migrations
 
             modelBuilder.Entity("PropertyManager.Domain.RentalApplication", b =>
                 {
+                    b.HasOne("PropertyManager.Domain.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicantUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("PropertyManager.Domain.RentalUnit", "Unit")
                         .WithMany("Applications")
                         .HasForeignKey("RentalUnitId")
@@ -621,23 +646,12 @@ namespace PropertyManager.Data.Migrations
                                 .HasMaxLength(32)
                                 .HasColumnType("nvarchar(32)");
 
-                            b1.Property<Guid>("UserId")
-                                .HasColumnType("uniqueidentifier");
-
                             b1.HasKey("RentalApplicationId");
-
-                            b1.HasIndex("UserId");
 
                             b1.ToTable("ApplicantInfos", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("RentalApplicationId");
-
-                            b1.HasOne("PropertyManager.Domain.ApplicationUser", null)
-                                .WithMany()
-                                .HasForeignKey("UserId")
-                                .OnDelete(DeleteBehavior.Restrict)
-                                .IsRequired();
 
                             b1.OwnsOne("PropertyManager.Domain.Address", "CurrentAddress", b2 =>
                                 {
@@ -724,7 +738,7 @@ namespace PropertyManager.Data.Migrations
                     b.HasOne("PropertyManager.Domain.Property", "Property")
                         .WithMany("Units")
                         .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Property");

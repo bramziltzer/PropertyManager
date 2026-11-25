@@ -6,6 +6,8 @@ public static class SeedExtensions
     {
         // register database seeders here
         services.AddScoped<ISeeder, RoleSeeder>();
+        services.AddScoped<ISeeder, UnitTypeSeeder>();
+        services.AddScoped<ISeeder, ApplicationStatusTypeSeeder>();
 
         return services;
     }

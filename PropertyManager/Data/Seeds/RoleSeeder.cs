@@ -7,15 +7,16 @@ namespace PropertyManager.Data.Seeds;
 /// Seeds the application roles into the identity role store.
 /// </summary>
 /// <param name="roleManager">The role manager used to inspect and create application roles.</param>
-public class RoleSeeder(RoleManager<IdentityRole> roleManager) : ISeeder
+public class RoleSeeder(RoleManager<IdentityRole<Guid>> roleManager) : ISeeder
 {
     public async Task Seed(CancellationToken cancellationToken = default)
     {
         foreach (AppRole role in AppRoleUtils.GetAllRoles())
         {
-            if (!await roleManager.RoleExistsAsync(nameof(role)))
+            var roleName = AppRoleUtils.GetRoleName(role);
+            if (!await roleManager.RoleExistsAsync(roleName))
             {
-                await roleManager.CreateAsync(new IdentityRole(nameof(role)));
+                await roleManager.CreateAsync(new IdentityRole<Guid>(roleName));
             }
         }
     }

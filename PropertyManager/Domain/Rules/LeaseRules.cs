@@ -2,5 +2,5 @@
 
 public static class LeaseRules
 {
-    public static bool IsUnitAvailableForLease(RentalUnit unit, DateTime currentDate) => unit.GetActiveLease(currentDate) == null;
+    public static bool IsUnitAvailableForLease(RentalUnit unit, DateOnly currentDate) => unit.GetActiveLease(currentDate) == null;
 }

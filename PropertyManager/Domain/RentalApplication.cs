@@ -20,7 +20,7 @@ public class RentalApplication
     public int RentalUnitId { get; set; }
     public RentalUnit Unit { get; set; } = null!;
 
-    public ApplicantInfo ApplicantInfo { get; set; } = null!;
+    public ApplicantInfo? ApplicantInfo { get; set; }
 
     public ICollection<ResidenceHistory> ResidenceHistories { get; set; } = [];
     public RentalLease? Lease { get; set; }
@@ -46,12 +46,12 @@ public class RentalApplication
     /// Applies an allowed action and records the resulting status change.
     /// </summary>
     /// <param name="action">The action to apply.</param>
-    /// <param name="appliedBy">The identity of the user applying the action.</param>
+    /// <param name="appliedBy">The id of the user applying the action.</param>
     /// <param name="now">The time the action was applied.</param>
     /// <param name="comments">Optional comments from the property manager.</param>
     /// <exception cref="InvalidStatusTransitionException">Thrown when the action is not allowed for the current status.</exception>
     /// <exception cref="ReviewCommentRequiredException">Thrown when a Return or Deny action has no comment.</exception>
-    public void ApplyAction(ApplicationAction action, string appliedBy, DateTime now, string? comments = null)
+    public void ApplyAction(ApplicationAction action, Guid appliedBy, DateTimeOffset now, string? comments = null)
     {
         if (!Transitions.TryGetValue((Status, action), out ApplicationStatus nextStatus))
         {

@@ -2,8 +2,8 @@
 
 public class UnitType
 {
-    public int UnitTypeId { get; set; }
-    public string UnitTypeName { get; set; } = string.Empty;
-    public DateTime? EndDate { get; set; }
-    public bool IsActive(DateTime asOfDate) => EndDate is null || asOfDate.ToUniversalTime() < EndDate?.ToUniversalTime();
+    public UnitTypeKind Kind { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public DateOnly? EndDate { get; set; }
+    public bool IsActive(DateOnly asOfDate) => EndDate is null || asOfDate < EndDate;
 }

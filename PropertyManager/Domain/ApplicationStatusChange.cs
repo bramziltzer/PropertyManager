@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Identity;
-
 namespace PropertyManager.Domain;
 
 public class ApplicationStatusChange
@@ -9,11 +7,11 @@ public class ApplicationStatusChange
     public ApplicationStatus OldStatus { get; set; }
     public ApplicationStatus NewStatus { get; set; }
     public string? Comment { get; set; }
-    public string ChangedByUserId { get; set; } = string.Empty;
-    public DateTime ChangedDate { get; set; }
+    public Guid ChangedByUserId { get; set; }
+    public DateTimeOffset ChangedDate { get; set; }
 
     public RentalApplication RentalApplication { get; set; } = null!;
-    public IdentityUser Actor { get; set; } = null!;
+    public ApplicationUser ChangeByUser { get; set; } = null!;
 
     public ApplicationStatusChange()
     {
@@ -24,8 +22,8 @@ public class ApplicationStatusChange
         ApplicationStatus oldStatus,
         ApplicationStatus newStatus,
         string? comment,
-        string changedByUserId,
-        DateTime changedDate)
+        Guid changedByUserId,
+        DateTimeOffset changedDate)
     {
         RentalApplicationId = rentalApplicationId;
         OldStatus = oldStatus;

@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PropertyManager.Data;
 using PropertyManager.Data.Seeds;
 using PropertyManager.Domain;
+using PropertyManager.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,22 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddRoles<IdentityRole<Guid>>()
     .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.AddService<ApplicationExceptionFilter>();
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AllowAnonymousToAreaFolder("Identity", "/");
+});
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+builder.Services.AddApplicationServices();
 
 builder.Services.RegisterSeeders();
 
@@ -47,9 +65,11 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.MapStaticAssets()
+    .AllowAnonymous();
 
 app.MapControllerRoute(
     name: "default",

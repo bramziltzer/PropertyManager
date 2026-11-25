@@ -8,6 +8,9 @@ public static class SeedExtensions
         services.AddScoped<ISeeder, RoleSeeder>();
         services.AddScoped<ISeeder, UnitTypeSeeder>();
         services.AddScoped<ISeeder, ApplicationStatusTypeSeeder>();
+        services.AddScoped<ISeeder, UserSeeder>();
+        services.AddScoped<ISeeder, PropertyUnitSeeder>();
+        services.AddScoped<ISeeder, RentalApplicationSeeder>();
 
         return services;
     }

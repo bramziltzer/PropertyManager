@@ -10,7 +10,7 @@ public class ModalResultsTests
     [Fact]
     public void ModalSuccess_ReturnsRefreshContract()
     {
-        var controller = new TestAppController();
+        var controller = new TestController();
 
         var result = controller.Success("properties");
 
@@ -21,7 +21,7 @@ public class ModalResultsTests
     [Fact]
     public void ModalForm_ReturnsRequestedPartialAndModel()
     {
-        var controller = new TestAppController();
+        var controller = new TestController();
         var model = new object();
 
         var result = controller.Form("_PropertyForm", model);
@@ -30,10 +30,10 @@ public class ModalResultsTests
         result.Model.Should().BeSameAs(model);
     }
 
-    private sealed class TestAppController : AppController
+    private sealed class TestController : Controller
     {
-        public JsonResult Success(string refreshTarget) => ModalSuccess(refreshTarget);
+        public JsonResult Success(string refreshTarget) => this.ModalSuccess(refreshTarget);
 
-        public PartialViewResult Form(string partialName, object model) => ModalForm(partialName, model);
+        public PartialViewResult Form(string partialName, object model) => this.ModalForm(partialName, model);
     }
 }

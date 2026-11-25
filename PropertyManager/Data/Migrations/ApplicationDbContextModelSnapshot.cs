@@ -157,6 +157,65 @@ namespace PropertyManager.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("PropertyManager.Domain.ApplicationStatusChange", b =>
+                {
+                    b.Property<Guid>("ApplicationStatusChangeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChangedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("ChangedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int")
+                        .HasColumnName("NewApplicationStatusId");
+
+                    b.Property<int>("OldStatus")
+                        .HasColumnType("int")
+                        .HasColumnName("OldApplicationStatusId");
+
+                    b.Property<Guid>("RentalApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ApplicationStatusChangeId");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("NewStatus");
+
+                    b.HasIndex("OldStatus");
+
+                    b.HasIndex("RentalApplicationId", "ChangedDate");
+
+                    b.ToTable("ApplicationStatusChanges");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.ApplicationStatusType", b =>
+                {
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasColumnName("ApplicationStatusId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Status");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("ApplicationStatusTypes");
+                });
+
             modelBuilder.Entity("PropertyManager.Domain.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -223,6 +282,181 @@ namespace PropertyManager.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("PropertyManager.Domain.Property", b =>
+                {
+                    b.Property<int>("PropertyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PropertyId"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("PropertyId");
+
+                    b.ToTable("Properties");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalApplication", b =>
+                {
+                    b.Property<Guid>("RentalApplicationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RentalUnitId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int")
+                        .HasColumnName("ApplicationStatusId");
+
+                    b.HasKey("RentalApplicationId");
+
+                    b.HasIndex("RentalUnitId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("RentalApplications");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalLease", b =>
+                {
+                    b.Property<Guid>("LeaseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("BeginDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("LesseeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RentalApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("RentalUnitId")
+                        .HasColumnType("int");
+
+                    b.HasKey("LeaseId");
+
+                    b.HasIndex("LesseeId");
+
+                    b.HasIndex("RentalApplicationId", "RentalUnitId")
+                        .IsUnique();
+
+                    b.HasIndex("RentalUnitId", "BeginDate", "EndDate");
+
+                    b.ToTable("RentalLeases", t =>
+                        {
+                            t.HasCheckConstraint("CK_RentalLeases_EndDate", "[EndDate] > [BeginDate]");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalUnit", b =>
+                {
+                    b.Property<int>("RentalUnitId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RentalUnitId"));
+
+                    b.Property<int>("Bedrooms")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int")
+                        .HasColumnName("UnitTypeId");
+
+                    b.Property<decimal>("MonthlyRent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PropertyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UnitNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("RentalUnitId");
+
+                    b.HasIndex("Kind");
+
+                    b.HasIndex("PropertyId", "UnitNumber")
+                        .IsUnique();
+
+                    b.ToTable("RentalUnits", t =>
+                        {
+                            t.HasCheckConstraint("CK_RentalUnits_Bedrooms", "[Bedrooms] >= 0");
+
+                            t.HasCheckConstraint("CK_RentalUnits_MonthlyRent", "[MonthlyRent] >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.ResidenceHistory", b =>
+                {
+                    b.Property<Guid>("ResidenceHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("LandlordName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LandlordPhone")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateOnly>("MoveInDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("MoveOutDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("RentalApplicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ResidenceHistoryId");
+
+                    b.HasIndex("RentalApplicationId", "MoveInDate");
+
+                    b.ToTable("ResidenceHistories", t =>
+                        {
+                            t.HasCheckConstraint("CK_ResidenceHistories_MoveOutDate", "[MoveOutDate] IS NULL OR [MoveOutDate] >= [MoveInDate]");
+                        });
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.UnitType", b =>
+                {
+                    b.Property<int>("Kind")
+                        .HasColumnType("int")
+                        .HasColumnName("UnitTypeId");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("Kind");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("UnitTypes");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", null)
@@ -272,6 +506,302 @@ namespace PropertyManager.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.ApplicationStatusChange", b =>
+                {
+                    b.HasOne("PropertyManager.Domain.ApplicationUser", "ChangeByUser")
+                        .WithMany()
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.ApplicationStatusType", null)
+                        .WithMany()
+                        .HasForeignKey("NewStatus")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.ApplicationStatusType", null)
+                        .WithMany()
+                        .HasForeignKey("OldStatus")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.RentalApplication", "RentalApplication")
+                        .WithMany("History")
+                        .HasForeignKey("RentalApplicationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ChangeByUser");
+
+                    b.Navigation("RentalApplication");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.Property", b =>
+                {
+                    b.OwnsOne("PropertyManager.Domain.Address", "Address", b1 =>
+                        {
+                            b1.Property<int>("PropertyId")
+                                .HasColumnType("int");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.Property<string>("Line2")
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<string>("ZipCode")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)");
+
+                            b1.HasKey("PropertyId");
+
+                            b1.ToTable("Properties");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PropertyId");
+                        });
+
+                    b.Navigation("Address")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalApplication", b =>
+                {
+                    b.HasOne("PropertyManager.Domain.RentalUnit", "Unit")
+                        .WithMany("Applications")
+                        .HasForeignKey("RentalUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.ApplicationStatusType", null)
+                        .WithMany()
+                        .HasForeignKey("Status")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.OwnsOne("PropertyManager.Domain.ApplicantInfo", "ApplicantInfo", b1 =>
+                        {
+                            b1.Property<Guid>("RentalApplicationId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("Email")
+                                .IsRequired()
+                                .HasMaxLength(256)
+                                .HasColumnType("nvarchar(256)");
+
+                            b1.Property<string>("FirstName")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("LastName")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("PhoneNumber")
+                                .IsRequired()
+                                .HasMaxLength(32)
+                                .HasColumnType("nvarchar(32)");
+
+                            b1.Property<Guid>("UserId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.HasKey("RentalApplicationId");
+
+                            b1.HasIndex("UserId");
+
+                            b1.ToTable("ApplicantInfos", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("RentalApplicationId");
+
+                            b1.HasOne("PropertyManager.Domain.ApplicationUser", null)
+                                .WithMany()
+                                .HasForeignKey("UserId")
+                                .OnDelete(DeleteBehavior.Restrict)
+                                .IsRequired();
+
+                            b1.OwnsOne("PropertyManager.Domain.Address", "CurrentAddress", b2 =>
+                                {
+                                    b2.Property<Guid>("ApplicantInfoRentalApplicationId")
+                                        .HasColumnType("uniqueidentifier");
+
+                                    b2.Property<string>("City")
+                                        .IsRequired()
+                                        .HasMaxLength(100)
+                                        .HasColumnType("nvarchar(100)");
+
+                                    b2.Property<string>("Line1")
+                                        .IsRequired()
+                                        .HasMaxLength(200)
+                                        .HasColumnType("nvarchar(200)");
+
+                                    b2.Property<string>("Line2")
+                                        .HasMaxLength(200)
+                                        .HasColumnType("nvarchar(200)");
+
+                                    b2.Property<string>("State")
+                                        .IsRequired()
+                                        .HasMaxLength(50)
+                                        .HasColumnType("nvarchar(50)");
+
+                                    b2.Property<string>("ZipCode")
+                                        .IsRequired()
+                                        .HasMaxLength(10)
+                                        .HasColumnType("nvarchar(10)");
+
+                                    b2.HasKey("ApplicantInfoRentalApplicationId");
+
+                                    b2.ToTable("ApplicantInfos");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("ApplicantInfoRentalApplicationId");
+                                });
+
+                            b1.Navigation("CurrentAddress")
+                                .IsRequired();
+                        });
+
+                    b.Navigation("ApplicantInfo");
+
+                    b.Navigation("Unit");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalLease", b =>
+                {
+                    b.HasOne("PropertyManager.Domain.ApplicationUser", "Lessee")
+                        .WithMany()
+                        .HasForeignKey("LesseeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.RentalUnit", "RentalUnit")
+                        .WithMany("Leases")
+                        .HasForeignKey("RentalUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.RentalApplication", "RentalApplication")
+                        .WithOne("Lease")
+                        .HasForeignKey("PropertyManager.Domain.RentalLease", "RentalApplicationId", "RentalUnitId")
+                        .HasPrincipalKey("PropertyManager.Domain.RentalApplication", "RentalApplicationId", "RentalUnitId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Lessee");
+
+                    b.Navigation("RentalApplication");
+
+                    b.Navigation("RentalUnit");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalUnit", b =>
+                {
+                    b.HasOne("PropertyManager.Domain.UnitType", "UnitType")
+                        .WithMany()
+                        .HasForeignKey("Kind")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PropertyManager.Domain.Property", "Property")
+                        .WithMany("Units")
+                        .HasForeignKey("PropertyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Property");
+
+                    b.Navigation("UnitType");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.ResidenceHistory", b =>
+                {
+                    b.HasOne("PropertyManager.Domain.RentalApplication", "RentalApplication")
+                        .WithMany("ResidenceHistories")
+                        .HasForeignKey("RentalApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("PropertyManager.Domain.Address", "Address", b1 =>
+                        {
+                            b1.Property<Guid>("ResidenceHistoryId")
+                                .HasColumnType("uniqueidentifier");
+
+                            b1.Property<string>("City")
+                                .IsRequired()
+                                .HasMaxLength(100)
+                                .HasColumnType("nvarchar(100)");
+
+                            b1.Property<string>("Line1")
+                                .IsRequired()
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.Property<string>("Line2")
+                                .HasMaxLength(200)
+                                .HasColumnType("nvarchar(200)");
+
+                            b1.Property<string>("State")
+                                .IsRequired()
+                                .HasMaxLength(50)
+                                .HasColumnType("nvarchar(50)");
+
+                            b1.Property<string>("ZipCode")
+                                .IsRequired()
+                                .HasMaxLength(10)
+                                .HasColumnType("nvarchar(10)");
+
+                            b1.HasKey("ResidenceHistoryId");
+
+                            b1.ToTable("ResidenceHistories");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ResidenceHistoryId");
+                        });
+
+                    b.Navigation("Address")
+                        .IsRequired();
+
+                    b.Navigation("RentalApplication");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.Property", b =>
+                {
+                    b.Navigation("Units");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalApplication", b =>
+                {
+                    b.Navigation("History");
+
+                    b.Navigation("Lease");
+
+                    b.Navigation("ResidenceHistories");
+                });
+
+            modelBuilder.Entity("PropertyManager.Domain.RentalUnit", b =>
+                {
+                    b.Navigation("Applications");
+
+                    b.Navigation("Leases");
                 });
 #pragma warning restore 612, 618
         }

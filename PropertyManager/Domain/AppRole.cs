@@ -21,7 +21,7 @@ public static class AppRoleUtils
         return role switch
         {
             AppRole.Applicant => "Applicant",
-            AppRole.PropertyManager => "Property Manager",
+            AppRole.PropertyManager => "PropertyManager",
             _ => throw new InvalidEnumArgumentException("Encountered unrecognized role type when fetching role name."),
         };
     }

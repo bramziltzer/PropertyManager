@@ -26,7 +26,8 @@ public class RentalApplication
     public RentalLease? Lease { get; set; }
     public ApplicationStatus Status { get; private set; }
 
-    public string? PropertyManagerComments { get; private set; }
+    public string? CurrentComment =>
+        History.OrderByDescending(change => change.ChangedDate).FirstOrDefault()?.Comment;
 
     public ICollection<ApplicationStatusChange> History { get; set; } = [];
 
@@ -63,9 +64,7 @@ public class RentalApplication
             throw new ReviewCommentRequiredException(nextStatus);
         }
 
-        // TODO consider reducing duplications stored in the db
         History.Add(new ApplicationStatusChange(this.RentalApplicationId, Status, nextStatus, comments, appliedBy, now));
         Status = nextStatus;
-        PropertyManagerComments = comments;
     }
 }

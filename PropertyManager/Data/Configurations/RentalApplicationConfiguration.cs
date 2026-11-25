@@ -17,8 +17,7 @@ public class RentalApplicationConfiguration : IEntityTypeConfiguration<RentalApp
             .WithMany()
             .HasForeignKey(application => application.Status)
             .OnDelete(DeleteBehavior.Restrict);
-        builder.Property(application => application.PropertyManagerComments)
-            .HasMaxLength(ColumnLengths.Comment);
+        builder.Ignore(application => application.CurrentComment);
         builder.HasOne(application => application.Unit)
             .WithMany(unit => unit.Applications)
             .HasForeignKey(application => application.RentalUnitId)

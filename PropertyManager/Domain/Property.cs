@@ -3,9 +3,9 @@
 public class Property
 {
     public int PropertyId { get; set; }
-    public Address Address { get; set; }    
+    public string Name { get; set; } = string.Empty;
+    public Address Address { get; set; } = null!;
 
-    // ef navigation property
     public ICollection<RentalUnit> Units { get; set; } = [];
 
     public void AddUnit(RentalUnit unit) => Units.Add(unit);

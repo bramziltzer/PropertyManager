@@ -4,25 +4,32 @@ namespace PropertyManager.Domain;
 
 public class RentalApplication
 {
+    public RentalApplication()
+    {
+    }
+
     public RentalApplication(RentalUnit unit, ApplicationStatus status)
     {
         Unit = unit;
+        RentalUnitId = unit.RentalUnitId;
         Status = status;
     }
 
-    public RentalUnit Unit { get; set; }
+    public Guid RentalApplicationId { get; set; }
 
-    // For now, only one applicant is allowed per application, but this could be changed in the future.
-    public ApplicantInfo ApplicantInfo { get; set; }
-    
-    public List<ResidenceHistory> ResidenceHistories { get; set; } = new List<ResidenceHistory>();
+    public int RentalUnitId { get; set; }
+    public RentalUnit Unit { get; set; } = null!;
 
+    public ApplicantInfo ApplicantInfo { get; set; } = null!;
+
+    public ICollection<ResidenceHistory> ResidenceHistories { get; set; } = [];
+    public RentalLease? Lease { get; set; }
     public ApplicationStatus Status { get; private set; }
 
     public string? PropertyManagerComments { get; private set; }
-    
-    public List<ApplicationStatusChange> History { get; set; }
-    // State Machine:
+
+    public ICollection<ApplicationStatusChange> History { get; set; } = [];
+
     private static readonly Dictionary<(ApplicationStatus, ApplicationAction), ApplicationStatus> Transitions = new()
     {
         [(ApplicationStatus.Draft, ApplicationAction.Submit)] = ApplicationStatus.Submitted,
@@ -36,29 +43,29 @@ public class RentalApplication
     };
 
     /// <summary>
-    /// Updates the application status and property manager comments.
+    /// Applies an allowed action and records the resulting status change.
     /// </summary>
-    /// <param name="newStatus">The new application status.</param>
-    /// <param name="propertyManagerComments">Comments from the property manager.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="newStatus"/> is <see cref="ApplicationStatus.Returned"/> or <see
-    /// cref="ApplicationStatus.Denied"/> and <paramref name="propertyManagerComments"/> is null, empty, or whitespace.</exception>
+    /// <param name="action">The action to apply.</param>
+    /// <param name="appliedBy">The identity of the user applying the action.</param>
+    /// <param name="now">The time the action was applied.</param>
+    /// <param name="comments">Optional comments from the property manager.</param>
+    /// <exception cref="InvalidStatusTransitionException">Thrown when the action is not allowed for the current status.</exception>
+    /// <exception cref="ReviewCommentRequiredException">Thrown when a Return or Deny action has no comment.</exception>
     public void ApplyAction(ApplicationAction action, string appliedBy, DateTime now, string? comments = null)
     {
-        if (!Transitions.TryGetValue((this.Status, action), out ApplicationStatus nextStatus)) 
+        if (!Transitions.TryGetValue((Status, action), out ApplicationStatus nextStatus))
         {
-            throw new InvalidStatusTransitionException(this.Status, action);
+            throw new InvalidStatusTransitionException(Status, action);
         }
 
         if (ApplicationStatusRules.RequiresComment(nextStatus) && string.IsNullOrWhiteSpace(comments))
         {
-            // TODO change this to custom exception
-            throw new ArgumentException("Property manager comments are required for the new application status {0}.", nameof(nextStatus));
+            throw new ReviewCommentRequiredException(nextStatus);
         }
 
-        History.Add(new ApplicationStatusChange(Status, nextStatus, comments, appliedBy, now));
+        // TODO consider reducing duplications stored in the db
+        History.Add(new ApplicationStatusChange(this.RentalApplicationId, Status, nextStatus, comments, appliedBy, now));
         Status = nextStatus;
-        PropertyManagerComments = comments; // todo this may be best kept in the history table
-
-        // replace status and comments properties with a status collection with date and user
+        PropertyManagerComments = comments;
     }
 }

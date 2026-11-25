@@ -4,35 +4,32 @@ namespace PropertyManager.Domain;
 
 public class RentalUnit
 {
-    public Guid RentalUnitId { get; set; }
-    
-    public string UnitNumber { get; set; }
+    public int RentalUnitId { get; set; }
 
-    public Guid PropertyId { get; set; }
+    public string UnitNumber { get; set; } = string.Empty;
 
-    public decimal RentAmount { get; set; }
+    public int PropertyId { get; set; }
 
-    public int BedroomCount { get; set; }
-    
-    // navigation property
-    public Property Property { get; set; }
+    public decimal MonthlyRent { get; set; }
+
+    public int Bedrooms { get; set; }
+
+    public Property Property { get; set; } = null!;
 
     public int UnitTypeId { get; set; }
-    // navigation property
-    public UnitType UnitType { get; set; }
+    public UnitType UnitType { get; set; } = null!;
 
-    // ef navigation property
-    public List<Lease> Leases { get; set; } = new List<Lease>();
+    public ICollection<RentalLease> Leases { get; set; } = [];
 
-    public Lease? GetActiveLease(DateTime asOfDate)
+    public ICollection<RentalApplication> Applications { get; set; } = [];
+
+    public RentalLease? GetActiveLease(DateTime asOfDate)
     {
         return Leases.FirstOrDefault(l => l.BeginDate <= asOfDate && l.EndDate >= asOfDate);
     }
 
-    // TODO this may not belong here
-    public void CreateLease(Lease lease)
+    public void CreateLease(RentalLease lease)
     {
-        // TODO creates lease with 12 month term but should be able to create leases with different terms
         if (!LeaseRules.IsUnitAvailableForLease(this, DateTime.UtcNow))
         {
             throw new InvalidOperationException("Cannot create a lease for a unit that is already leased.");

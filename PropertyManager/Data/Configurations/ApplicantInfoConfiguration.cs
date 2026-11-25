@@ -13,10 +13,6 @@ public class ApplicantInfoConfiguration
         builder.Property(info => info.LastName).IsRequired().HasMaxLength(100);
         builder.Property(info => info.PhoneNumber).IsRequired().HasMaxLength(ColumnLengths.PhoneNumber);
         builder.Property(info => info.Email).IsRequired().HasMaxLength(256);
-        builder.HasOne<ApplicationUser>()
-            .WithMany()
-            .HasForeignKey(x => x.UserId)
-            .OnDelete(DeleteBehavior.Restrict);
         builder.OwnsOne(info => info.CurrentAddress, address => address.ConfigureAddress());
         builder.Navigation(info => info.CurrentAddress).IsRequired();
     }

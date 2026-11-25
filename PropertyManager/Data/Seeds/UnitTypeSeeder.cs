@@ -6,6 +6,9 @@ namespace PropertyManager.Data.Seeds;
 
 public class UnitTypeSeeder(ApplicationDbContext dbContext) : ISeeder
 {
+    // Seeded as inactive for testing purposes
+    private static readonly HashSet<UnitTypeKind> InactiveKinds = [UnitTypeKind.Townhouse];
+
     public async Task Seed(CancellationToken cancellationToken = default)
     {
         var existing = await dbContext.UnitTypes.ToDictionaryAsync(unitType => unitType.Kind, cancellationToken);
@@ -18,7 +21,7 @@ public class UnitTypeSeeder(ApplicationDbContext dbContext) : ISeeder
             }
             else
             {
-                dbContext.UnitTypes.Add(new UnitType { Kind = kind, Name = kind.ToString() });
+                dbContext.UnitTypes.Add(new UnitType { Kind = kind, Name = kind.ToString(), IsActive = !InactiveKinds.Contains(kind) });
             }
         }
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -9,6 +9,7 @@ public class RentalUnitConfiguration : IEntityTypeConfiguration<RentalUnit>
     public void Configure(EntityTypeBuilder<RentalUnit> builder)
     {
         builder.HasKey(unit => unit.RentalUnitId);
+        builder.Property<byte[]>("RowVersion").IsRowVersion();
         builder.Property(unit => unit.UnitNumber).IsRequired().HasMaxLength(50);
         builder.Property(unit => unit.MonthlyRent).HasPrecision(18, 2);
         builder.Property(unit => unit.Kind)
@@ -20,10 +21,12 @@ public class RentalUnitConfiguration : IEntityTypeConfiguration<RentalUnit>
             table.HasCheckConstraint("CK_RentalUnits_Bedrooms", "[Bedrooms] >= 0");
         });
         builder.HasIndex(unit => new { unit.PropertyId, unit.UnitNumber }).IsUnique();
+        // Cascade lets EF delete a unit removed from Property.Units. Units with leases or applications
+        // are still protected: those foreign keys are Restrict, and the domain blocks the removal first.
         builder.HasOne(unit => unit.Property)
             .WithMany(property => property.Units)
             .HasForeignKey(unit => unit.PropertyId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(unit => unit.UnitType)
             .WithMany()
             .HasForeignKey(unit => unit.Kind)

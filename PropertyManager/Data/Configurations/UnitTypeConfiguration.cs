@@ -14,7 +14,7 @@ public class UnitTypeConfiguration : IEntityTypeConfiguration<UnitType>
             .HasConversion<int>()
             .ValueGeneratedNever();
         builder.Property(type => type.Name).IsRequired().HasMaxLength(ColumnLengths.LookupName);
-        builder.Property(type => type.EndDate).HasColumnType("date");
+        builder.Property(type => type.IsActive).HasDefaultValue(true);
         builder.HasIndex(type => type.Name).IsUnique();
     }
 }

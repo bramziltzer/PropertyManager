@@ -11,17 +11,22 @@ public enum AppRole
     PropertyManager
 }
 
+public static class RoleNames
+{
+    public const string Applicant = "Applicant";
+    public const string PropertyManager = "PropertyManager";
+}
+
 public static class AppRoleUtils
 {
     public static List<AppRole> GetAllRoles() => Enum.GetValues<AppRole>().ToList();
 
-    // TODO remove
     public static string GetRoleName(AppRole role)
     {
         return role switch
         {
-            AppRole.Applicant => "Applicant",
-            AppRole.PropertyManager => "PropertyManager",
+            AppRole.Applicant => RoleNames.Applicant,
+            AppRole.PropertyManager => RoleNames.PropertyManager,
             _ => throw new InvalidEnumArgumentException("Encountered unrecognized role type when fetching role name."),
         };
     }

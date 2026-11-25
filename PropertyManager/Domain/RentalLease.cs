@@ -1,22 +1,37 @@
+using PropertyManager.Domain.Rules;
+
 namespace PropertyManager.Domain;
 
 public class RentalLease
 {
-    public Guid LeaseId { get; set; }
+    private RentalLease()
+    {
+    }
 
-    public Guid LesseeId { get; set; }
+    internal RentalLease(RentalApplication application, RentalUnit unit, DateOnly startDate)
+    {
+        RentalApplication = application;
+        RentalUnit = unit;
+        LesseeId = application.ApplicantUserId;
+        BeginDate = startDate;
+        EndDate = LeaseRules.TermEnd(startDate);
+    }
 
-    public ApplicationUser Lessee { get; set; } = null!;
+    public Guid LeaseId { get; private set; }
 
-    public Guid RentalApplicationId { get; set; }
+    public Guid LesseeId { get; private set; }
 
-    public RentalApplication RentalApplication { get; set; } = null!;
+    public ApplicationUser Lessee { get; private set; } = null!;
 
-    public int RentalUnitId { get; set; }
+    public Guid RentalApplicationId { get; private set; }
 
-    public RentalUnit RentalUnit { get; set; } = null!;
+    public RentalApplication RentalApplication { get; private set; } = null!;
 
-    public DateOnly BeginDate { get; set; }
+    public int RentalUnitId { get; private set; }
 
-    public DateOnly EndDate { get; set; }
+    public RentalUnit RentalUnit { get; private set; } = null!;
+
+    public DateOnly BeginDate { get; private set; }
+
+    public DateOnly EndDate { get; private set; }
 }

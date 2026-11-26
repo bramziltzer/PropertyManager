@@ -19,7 +19,7 @@ public sealed class ResidencesControllerTests
         var applicationId = Guid.NewGuid();
         var residenceId = Guid.NewGuid();
         var service = new Mock<IRentalApplicationService>();
-        service.Setup(item => item.GetResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
+        service.Setup(item => item.GetApplicationResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResidenceListDto(applicationId, [], ApplicationStatus.Draft, true));
         service.Setup(item => item.AddResidenceAsync(
                 applicationId,
@@ -43,7 +43,7 @@ public sealed class ResidencesControllerTests
     {
         var applicationId = Guid.NewGuid();
         var service = new Mock<IRentalApplicationService>();
-        service.Setup(item => item.GetResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
+        service.Setup(item => item.GetApplicationResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResidenceListDto(applicationId, [], ApplicationStatus.Draft, true));
         var controller = new ResidencesController(service.Object);
         controller.ModelState.AddModelError(
@@ -69,7 +69,7 @@ public sealed class ResidencesControllerTests
     {
         var applicationId = Guid.NewGuid();
         var service = new Mock<IRentalApplicationService>();
-        service.Setup(item => item.GetResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
+        service.Setup(item => item.GetApplicationResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResidenceListDto(
                 applicationId,
                 [],
@@ -106,7 +106,7 @@ public sealed class ResidencesControllerTests
                 null)
         };
         var service = new Mock<IRentalApplicationService>();
-        service.Setup(item => item.GetResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
+        service.Setup(item => item.GetApplicationResidencesAsync(applicationId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ResidenceListDto(applicationId, residences, ApplicationStatus.Draft, true));
         var controller = new ResidencesController(service.Object);
 

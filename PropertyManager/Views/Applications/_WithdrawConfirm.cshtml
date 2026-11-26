@@ -1,0 +1,18 @@
+@model WithdrawConfirmViewModel
+
+<form asp-action="Withdraw" asp-route-id="@Model.RentalApplicationId" method="post" data-modal-form>
+    @Html.AntiForgeryToken()
+    <div class="modal-header">
+        <h2 class="modal-title fs-5">Withdraw Application?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div data-modal-error class="alert alert-danger d-none" role="alert"></div>
+        <p>Are you sure you want to withdraw your application for <strong>@Model.PropertyName &mdash; Unit @Model.UnitNumber</strong>?</p>
+        <p class="text-muted mb-0">This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger">Withdraw Application</button>
+    </div>
+</form>

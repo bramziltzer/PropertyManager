@@ -332,6 +332,51 @@ public sealed class RentalApplicationService(
         application.EnsureResidenceHistoryComplete();
     }
 
+    public async Task SubmitAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureApplicantCanEditApplications();
+
+        var applicantId = currentUser.Id;
+        var application = await dbContext.RentalApplications
+            .Include(app => app.ResidenceHistories)
+            .Include(app => app.Unit)
+                .ThenInclude(unit => unit.Leases)
+            .FirstOrDefaultAsync(
+                app =>
+                    app.RentalApplicationId == applicationId &&
+                    app.ApplicantUserId == applicantId,
+                cancellationToken)
+            ?? throw new NotFoundException($"Application {applicationId} was not found.");
+
+        var now = timeProvider.GetUtcNow();
+        var today = DateOnly.FromDateTime(now.UtcDateTime);
+
+        application.Submit(applicantId, now, today);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task WithdrawAsync(
+        Guid applicationId,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureApplicantCanEditApplications();
+
+        var applicantId = currentUser.Id;
+        var application = await dbContext.RentalApplications
+            .FirstOrDefaultAsync(
+                app =>
+                    app.RentalApplicationId == applicationId &&
+                    app.ApplicantUserId == applicantId,
+                cancellationToken)
+            ?? throw new NotFoundException($"Application {applicationId} was not found.");
+
+        var now = timeProvider.GetUtcNow();
+        application.Withdraw(applicantId, now);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     private async Task<RentalApplication> LoadOwnedApplicationAsync(
         Guid applicationId,
         CancellationToken cancellationToken)

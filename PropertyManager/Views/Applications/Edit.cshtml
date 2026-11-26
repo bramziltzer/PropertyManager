@@ -17,7 +17,15 @@
         <a asp-action="Index" class="text-decoration-none">&larr; Back to Applications</a>
         <h1 class="mt-2 mb-0">@Model.Unit.PropertyName &mdash; Unit @Model.Unit.UnitNumber</h1>
     </div>
-    <div>
+    <div class="d-flex align-items-center gap-2">
+        @if (Model.CanWithdraw)
+        {
+            <button type="button"
+                    class="btn btn-outline-danger btn-sm"
+                    data-modal-url="@Url.Action("Withdraw", "Applications", new { id = Model.RentalApplicationId })">
+                Withdraw Application
+            </button>
+        }
         @await Component.InvokeAsync("ApplicationStatusBadge", new { status = Model.Status })
     </div>
 </div>
@@ -105,8 +113,7 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger mt-3"></div>
                     break;
                 case ApplicationSection.Summary:
-                    <h2 class="h5 mb-3">Summary</h2>
-                    <p class="text-muted mb-0">Application summary and submission are coming in the next step.</p>
+                    <partial name="_SummarySection" model="Model" />
                     break;
             }
         </div>
@@ -124,6 +131,12 @@
                 {
                     <button type="submit" name="command" value="continue" class="btn btn-primary">
                         Continue
+                    </button>
+                }
+                else if (Model.CanSubmit)
+                {
+                    <button type="submit" name="command" value="submit" class="btn btn-success">
+                        Submit Application
                     </button>
                 }
             </div>

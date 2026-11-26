@@ -32,6 +32,16 @@ public sealed class ApplicantInfoSectionViewModel
 
     public bool IsReadOnly { get; set; }
 
+    public ApplicantInfoSectionViewModel AsReadOnly() => new()
+    {
+        FirstName = FirstName,
+        LastName = LastName,
+        PhoneNumber = PhoneNumber,
+        Email = Email,
+        CurrentAddress = CurrentAddress,
+        IsReadOnly = true
+    };
+
     public SaveApplicantInfoDto ToDto() => new(
         FirstName,
         LastName,

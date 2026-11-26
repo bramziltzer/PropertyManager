@@ -1,0 +1,32 @@
+@model ApplicationPageViewModel
+
+<h2 class="h5 mb-3">Summary</h2>
+
+@if (!Model.IsReadyToSubmit && Model.IncompleteSections.Count > 0)
+{
+    var missing = string.Join(", ", Model.IncompleteSections.Select(section => section switch
+    {
+        ApplicationSection.ApplicantInfo => "Applicant Information",
+        ApplicationSection.ResidenceHistory => "Residence History",
+        _ => section.ToString()
+    }));
+
+    <div class="alert alert-warning" role="alert">
+        Complete the following sections before submitting: @missing.
+    </div>
+}
+
+<partial name="_ApplicantInfoSection" model="Model.ApplicantInfo.AsReadOnly()" />
+
+<hr class="my-4" />
+
+@await Component.InvokeAsync(
+    "ResidenceHistorySection",
+    new
+    {
+        applicationId = Model.RentalApplicationId,
+        residences = Model.Residences,
+        isEditable = false
+    })
+
+<div asp-validation-summary="ModelOnly" class="text-danger mt-3"></div>

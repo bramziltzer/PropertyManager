@@ -485,6 +485,160 @@ public class RentalApplicationServiceTests
             .Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task SubmitAsync_MissingRequiredSection_ThrowsApplicationIncompleteException()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item => item.SubmitAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<ApplicationIncompleteException>()
+            .WithMessage("*Applicant Information*Residence History*");
+    }
+
+    [Fact]
+    public async Task SubmitAsync_UnitWithActiveLease_ThrowsUnitNotAvailableException()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var otherApplicantId = Guid.NewGuid();
+        dbContext.Users.Add(new ApplicationUser
+        {
+            Id = otherApplicantId,
+            UserName = "other@example.com",
+            Email = "other@example.com"
+        });
+
+        var application = TestData.Completed(unit, TestData.ApplicantId);
+        var competing = TestData.Submitted(unit, otherApplicantId);
+        competing.Approve(TestData.ManagerId, TestData.Now.AddDays(-1), TestData.Today.AddDays(-1));
+        dbContext.RentalApplications.AddRange(application, competing);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item => item.SubmitAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<UnitNotAvailableException>();
+    }
+
+    [Fact]
+    public async Task SubmitAsync_ValidDraft_SubmitsAndAddsExpectedHistoryEvent()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Completed(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.SubmitAsync(application.RentalApplicationId);
+
+        var saved = await dbContext.RentalApplications
+            .AsNoTracking()
+            .Include(a => a.History)
+            .SingleAsync(a => a.RentalApplicationId == application.RentalApplicationId);
+        saved.Status.Should().Be(ApplicationStatus.Submitted);
+        var change = saved.History.Should().ContainSingle().Subject;
+        change.OldStatus.Should().Be(ApplicationStatus.Draft);
+        change.NewStatus.Should().Be(ApplicationStatus.Submitted);
+        change.ChangedByUserId.Should().Be(TestData.ApplicantId);
+        change.ChangedDate.Should().Be(TestData.Now);
+        change.Comment.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(ApplicationStatus.Draft)]
+    [InlineData(ApplicationStatus.Returned)]
+    [InlineData(ApplicationStatus.Submitted)]
+    public async Task WithdrawAsync_ValidSourceStatuses_WithdrawsApplication(ApplicationStatus sourceStatus)
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = sourceStatus switch
+        {
+            ApplicationStatus.Draft => TestData.Draft(unit, TestData.ApplicantId),
+            ApplicationStatus.Submitted => TestData.Submitted(unit, TestData.ApplicantId),
+            ApplicationStatus.Returned => CreateReturnedApplication(unit),
+            _ => throw new ArgumentOutOfRangeException(nameof(sourceStatus))
+        };
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.WithdrawAsync(application.RentalApplicationId);
+
+        var saved = await dbContext.RentalApplications
+            .AsNoTracking()
+            .Include(a => a.History)
+            .SingleAsync(a => a.RentalApplicationId == application.RentalApplicationId);
+        saved.Status.Should().Be(ApplicationStatus.Withdrawn);
+        saved.History.Should().Contain(h =>
+            h.OldStatus == sourceStatus
+            && h.NewStatus == ApplicationStatus.Withdrawn
+            && h.ChangedByUserId == TestData.ApplicantId
+            && h.ChangedDate == TestData.Now);
+    }
+
+    [Theory]
+    [InlineData(ApplicationStatus.Approved)]
+    [InlineData(ApplicationStatus.Denied)]
+    [InlineData(ApplicationStatus.Withdrawn)]
+    public async Task WithdrawAsync_TerminalStatus_ThrowsInvalidStatusTransitionException(ApplicationStatus terminalStatus)
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Submitted(unit, TestData.ApplicantId);
+        switch (terminalStatus)
+        {
+            case ApplicationStatus.Approved:
+                application.Approve(TestData.ManagerId, TestData.Now.AddDays(-1), TestData.Today.AddDays(-1));
+                break;
+            case ApplicationStatus.Denied:
+                application.Deny(TestData.ManagerId, TestData.Now.AddDays(-1), "Denied");
+                break;
+            case ApplicationStatus.Withdrawn:
+                application.Withdraw(TestData.ApplicantId, TestData.Now.AddDays(-1));
+                break;
+        }
+
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item => item.WithdrawAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<InvalidStatusTransitionException>();
+    }
+
+    private static RentalApplication CreateReturnedApplication(RentalUnit unit)
+    {
+        var application = TestData.Submitted(unit, TestData.ApplicantId);
+        application.Return(TestData.ManagerId, TestData.Now.AddDays(-1), "Please update.");
+        return application;
+    }
+
     private static SaveResidenceDto CreateResidenceDto(string landlordName) => new(
         new PropertyManager.AppService.AddressDto("10 Main St", null, "Boston", "MA", "02101"),
         landlordName,

@@ -26,6 +26,10 @@ public sealed class ApplicationPageViewModel
 
     public bool IsReadyToSubmit { get; set; }
 
+    public bool CanSubmit => IsEditable && CurrentSection == ApplicationSection.Summary && IsReadyToSubmit;
+
+    public bool CanWithdraw => !IsPropertyManager && ApplicationStatusRules.OpenStatuses.Contains(Status);
+
     public IReadOnlyList<ApplicationSection> IncompleteSections { get; set; } = [];
 
     public IReadOnlyList<ApplicationSection> AllowedSections { get; set; } = [];
@@ -57,7 +61,7 @@ public sealed class ApplicationPageViewModel
         History = dto.History
     };
 
-    public void ApplyPageContext(ApplicationPageDto dto, ApplicationSection currentSection)
+    public void PopulatePageState(ApplicationPageDto dto, ApplicationSection currentSection)
     {
         RentalApplicationId = dto.RentalApplicationId;
         Status = dto.Status;

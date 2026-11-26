@@ -65,7 +65,7 @@ public class ApplicationsController(IRentalApplicationService rentalApplicationS
                     throw new ApplicationNotEditableException(page.Status);
                 }
 
-                model.ApplyPageContext(page, ApplicationSection.ApplicantInfo);
+                model.PopulatePageState(page, ApplicationSection.ApplicantInfo);
                 return View(model);
             }
 
@@ -91,13 +91,61 @@ public class ApplicationsController(IRentalApplicationService rentalApplicationS
                     id,
                     ApplicationSection.ResidenceHistory,
                     cancellationToken);
-                model.ApplyPageContext(page, ApplicationSection.ResidenceHistory);
+                model.PopulatePageState(page, ApplicationSection.ResidenceHistory);
                 return View(model);
             }
 
             return RedirectToAction(nameof(Edit), new { id, section = ApplicationSection.Summary });
         }
 
+        if (currentSection == ApplicationSection.Summary &&
+            string.Equals(command, "submit", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await rentalApplicationService.SubmitAsync(id, cancellationToken);
+                return RedirectToAction(nameof(Edit), new { id, section = ApplicationSection.Summary });
+            }
+            catch (DomainException exception) when (exception is ApplicationIncompleteException or UnitNotAvailableException)
+            {
+                ModelState.AddModelError(string.Empty, exception.Message);
+                var page = await rentalApplicationService.GetApplicationPageAsync(
+                    id,
+                    ApplicationSection.Summary,
+                    cancellationToken);
+                model.PopulatePageState(page, ApplicationSection.Summary);
+                return View(model);
+            }
+        }
+
         return RedirectToAction(nameof(Edit), new { id, section = currentSection });
+    }
+
+    [HttpGet]
+    [Authorize(Roles = RoleNames.Applicant)]
+    public async Task<IActionResult> Withdraw(Guid id, CancellationToken cancellationToken)
+    {
+        var page = await rentalApplicationService.GetApplicationPageAsync(id, null, cancellationToken);
+        if (!ApplicationStatusRules.OpenStatuses.Contains(page.Status))
+        {
+            throw new InvalidStatusTransitionException(page.Status, ApplicationAction.Withdraw);
+        }
+
+        return this.ModalForm("_WithdrawConfirm", new WithdrawConfirmViewModel
+        {
+            RentalApplicationId = page.RentalApplicationId,
+            PropertyName = page.Unit.PropertyName,
+            UnitNumber = page.Unit.UnitNumber,
+            Status = page.Status
+        });
+    }
+
+    [HttpPost]
+    [ActionName("Withdraw")]
+    [Authorize(Roles = RoleNames.Applicant)]
+    public async Task<IActionResult> WithdrawConfirmed(Guid id, CancellationToken cancellationToken)
+    {
+        await rentalApplicationService.WithdrawAsync(id, cancellationToken);
+        return RedirectToAction(nameof(Edit), new { id, section = ApplicationSection.Summary });
     }
 }

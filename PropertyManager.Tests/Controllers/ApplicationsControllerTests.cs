@@ -240,6 +240,122 @@ public class ApplicationsControllerTests
         controller.ModelState[string.Empty]!.Errors.Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task EditPost_SummarySubmit_SubmitsAndRedirectsToSummary()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.Summary,
+            "submit",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        appService.Verify(item => item.SubmitAsync(applicationId, It.IsAny<CancellationToken>()), Times.Once);
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.ActionName.Should().Be(nameof(ApplicationsController.Edit));
+        redirect.RouteValues!["id"].Should().Be(applicationId);
+        redirect.RouteValues["section"].Should().Be(ApplicationSection.Summary);
+    }
+
+    [Fact]
+    public async Task EditPost_SummarySubmit_WhenUnitUnavailable_RerendersSummaryWithError()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService.Setup(item => item.SubmitAsync(applicationId, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new UnitNotAvailableException("Unit 101 is not available."));
+        appService.Setup(item => item.GetApplicationPageAsync(
+                applicationId,
+                ApplicationSection.Summary,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(
+                applicationId,
+                isEditable: true,
+                currentSection: ApplicationSection.Summary));
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.Summary,
+            "submit",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        result.Should().BeOfType<ViewResult>();
+        controller.ModelState[string.Empty]!.Errors.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task EditPost_SummaryBack_RedirectsToResidenceHistoryWithoutSubmitting()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.Summary,
+            "back",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        appService.VerifyNoOtherCalls();
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.RouteValues!["section"].Should().Be(ApplicationSection.ResidenceHistory);
+    }
+
+    [Fact]
+    public async Task WithdrawGet_ValidStatus_ReturnsWithdrawConfirmPartial()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService.Setup(item => item.GetApplicationPageAsync(applicationId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(applicationId, isEditable: false, status: ApplicationStatus.Submitted));
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Withdraw(applicationId, CancellationToken.None);
+
+        var partial = result.Should().BeOfType<PartialViewResult>().Subject;
+        partial.ViewName.Should().Be("_WithdrawConfirm");
+        var model = partial.Model.Should().BeOfType<WithdrawConfirmViewModel>().Subject;
+        model.RentalApplicationId.Should().Be(applicationId);
+        model.PropertyName.Should().Be("Oakridge");
+        model.UnitNumber.Should().Be("101");
+    }
+
+    [Fact]
+    public async Task WithdrawGet_TerminalStatus_ThrowsInvalidStatusTransitionException()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService.Setup(item => item.GetApplicationPageAsync(applicationId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(applicationId, isEditable: false, status: ApplicationStatus.Approved));
+        var controller = new ApplicationsController(appService.Object);
+
+        await controller.Invoking(c => c.Withdraw(applicationId, CancellationToken.None))
+            .Should().ThrowAsync<InvalidStatusTransitionException>();
+    }
+
+    [Fact]
+    public async Task WithdrawPost_CallsWithdrawAndRedirectsToSummary()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.WithdrawConfirmed(applicationId, CancellationToken.None);
+
+        appService.Verify(item => item.WithdrawAsync(applicationId, It.IsAny<CancellationToken>()), Times.Once);
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.ActionName.Should().Be(nameof(ApplicationsController.Edit));
+        redirect.RouteValues!["id"].Should().Be(applicationId);
+        redirect.RouteValues["section"].Should().Be(ApplicationSection.Summary);
+    }
+
     private static ApplicationPageDto CreatePageDto(
         Guid applicationId,
         bool isEditable,

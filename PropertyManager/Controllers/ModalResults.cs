@@ -15,6 +15,13 @@ public static class ModalResults
         });
     }
 
+    /// <summary>
+    /// Returns a partial view result for a modal form.
+    /// </summary>
+    /// <param name="controller"></param>
+    /// <param name="partialName"></param>
+    /// <param name="model"></param>
+    /// <returns></returns>
     public static PartialViewResult ModalForm(this Controller controller, string partialName, object? model = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(partialName);

@@ -18,7 +18,7 @@ public sealed record UnitDetailsViewModel(
         dto.RentalUnitId,
         dto.PropertyId,
         dto.PropertyName,
-        AvailableUnitItemViewModel.FormatAddress(dto.PropertyAddress),
+        AddressFormatter.Format(dto.PropertyAddress),
         dto.UnitNumber,
         dto.Bedrooms,
         dto.MonthlyRent,

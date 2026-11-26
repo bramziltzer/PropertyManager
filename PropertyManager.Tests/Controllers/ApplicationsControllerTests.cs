@@ -5,6 +5,7 @@ using PropertyManager.AppService;
 using PropertyManager.AppService.Applications;
 using PropertyManager.Controllers;
 using PropertyManager.Domain;
+using PropertyManager.Domain.Exceptions;
 using PropertyManager.Models.ApplicationModels;
 
 namespace PropertyManager.Tests.Controllers;
@@ -53,4 +54,218 @@ public class ApplicationsControllerTests
             && a.ApplicantDisplayName == "Jane Doe"
             && a.Status == ApplicationStatus.Submitted);
     }
+
+    [Fact]
+    public async Task EditGet_ReturnsViewWithPageModel()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService
+            .Setup(s => s.GetApplicationPageAsync(applicationId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(applicationId, isEditable: true));
+
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(applicationId, null, CancellationToken.None);
+
+        var view = result.Should().BeOfType<ViewResult>().Subject;
+        var model = view.Model.Should().BeOfType<ApplicationPageViewModel>().Subject;
+        model.RentalApplicationId.Should().Be(applicationId);
+        model.IsEditable.Should().BeTrue();
+        model.ApplicantInfo.IsReadOnly.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EditPost_ValidContinue_SavesApplicantInfoAndRedirectsToResidenceHistory()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+        var model = new ApplicationPageViewModel
+        {
+            ApplicantInfo = new ApplicantInfoSectionViewModel
+            {
+                FirstName = "Ada",
+                LastName = "Lovelace",
+                PhoneNumber = "555-0100",
+                Email = "ada@example.com",
+                CurrentAddress = new AddressViewModel
+                {
+                    Line1 = "10 Main St",
+                    City = "Boston",
+                    State = "MA",
+                    ZipCode = "02101"
+                }
+            }
+        };
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.ApplicantInfo,
+            "continue",
+            model,
+            CancellationToken.None);
+
+        appService.Verify(s => s.SaveApplicantInfoAsync(
+                applicationId,
+                It.Is<SaveApplicantInfoDto>(d => d.FirstName == "Ada" && d.CurrentAddress.ZipCode == "02101"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.ActionName.Should().Be(nameof(ApplicationsController.Edit));
+        redirect.RouteValues!["id"].Should().Be(applicationId);
+        redirect.RouteValues["section"].Should().Be(ApplicationSection.ResidenceHistory);
+    }
+
+    [Fact]
+    public async Task EditPost_InvalidContinue_DoesNotPersistAndRerendersApplicantInfo()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService
+            .Setup(s => s.GetApplicationPageAsync(applicationId, ApplicationSection.ApplicantInfo, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(applicationId, isEditable: true));
+
+        var controller = new ApplicationsController(appService.Object);
+        controller.ModelState.AddModelError("ApplicantInfo.FirstName", "Required");
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.ApplicantInfo,
+            "continue",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        appService.Verify(s => s.SaveApplicantInfoAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<SaveApplicantInfoDto>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+
+        var view = result.Should().BeOfType<ViewResult>().Subject;
+        var model = view.Model.Should().BeOfType<ApplicationPageViewModel>().Subject;
+        model.CurrentSection.Should().Be(ApplicationSection.ApplicantInfo);
+        model.ApplicantInfo.IsReadOnly.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EditPost_InvalidContinueOnNonEditableApplication_ThrowsApplicationNotEditableException()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService
+            .Setup(s => s.GetApplicationPageAsync(applicationId, ApplicationSection.ApplicantInfo, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(applicationId, isEditable: false, status: ApplicationStatus.Submitted));
+
+        var controller = new ApplicationsController(appService.Object);
+        controller.ModelState.AddModelError("ApplicantInfo.FirstName", "Required");
+
+        await controller.Invoking(c => c.Edit(
+                applicationId,
+                ApplicationSection.ApplicantInfo,
+                "continue",
+                new ApplicationPageViewModel(),
+                CancellationToken.None))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+    }
+
+    [Fact]
+    public async Task EditPost_ResidenceContinue_EnsuresCompleteAndRedirectsToSummary()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.ResidenceHistory,
+            "continue",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        appService.Verify(item => item.EnsureResidenceHistoryCompleteAsync(
+            applicationId,
+            It.IsAny<CancellationToken>()), Times.Once);
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.RouteValues!["section"].Should().Be(ApplicationSection.Summary);
+    }
+
+    [Fact]
+    public async Task EditPost_ResidenceBack_DoesNotPersistAndRedirectsToApplicantInfo()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.ResidenceHistory,
+            "back",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        appService.VerifyNoOtherCalls();
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.RouteValues!["section"].Should().Be(ApplicationSection.ApplicantInfo);
+    }
+
+    [Fact]
+    public async Task EditPost_ResidenceContinueWithoutResidence_RerendersWithError()
+    {
+        var appService = new Mock<IRentalApplicationService>();
+        var applicationId = Guid.NewGuid();
+        appService.Setup(item => item.EnsureResidenceHistoryCompleteAsync(
+                applicationId,
+                It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ApplicationIncompleteException(["Residence History"]));
+        appService.Setup(item => item.GetApplicationPageAsync(
+                applicationId,
+                ApplicationSection.ResidenceHistory,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(CreatePageDto(
+                applicationId,
+                isEditable: true,
+                currentSection: ApplicationSection.ResidenceHistory));
+        var controller = new ApplicationsController(appService.Object);
+
+        var result = await controller.Edit(
+            applicationId,
+            ApplicationSection.ResidenceHistory,
+            "continue",
+            new ApplicationPageViewModel(),
+            CancellationToken.None);
+
+        result.Should().BeOfType<ViewResult>();
+        controller.ModelState[string.Empty]!.Errors.Should().ContainSingle();
+    }
+
+    private static ApplicationPageDto CreatePageDto(
+        Guid applicationId,
+        bool isEditable,
+        ApplicationStatus status = ApplicationStatus.Draft,
+        ApplicationSection currentSection = ApplicationSection.ApplicantInfo) => new(
+        applicationId,
+        status,
+        currentSection,
+        new UnitSummaryDto(
+            10,
+            3,
+            "Oakridge",
+            new AddressDto("100 Oak St", null, "Boston", "MA", "02101"),
+            "101",
+            2,
+            1650m,
+            "Apartment"),
+        null,
+        [],
+        false,
+        false,
+        false,
+        [ApplicationSection.ApplicantInfo, ApplicationSection.ResidenceHistory],
+        isEditable,
+        false,
+        [currentSection],
+        null,
+        null);
 }

@@ -1,0 +1,136 @@
+@model ApplicationPageViewModel
+
+@{
+    ViewData["Title"] = $"Application - {Model.Unit.PropertyName} Unit {Model.Unit.UnitNumber}";
+
+    string SectionLabel(ApplicationSection section) => section switch
+    {
+        ApplicationSection.ApplicantInfo => "1. Applicant Information",
+        ApplicationSection.ResidenceHistory => "2. Residence History",
+        ApplicationSection.Summary => "3. Summary",
+        _ => section.ToString()
+    };
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <a asp-action="Index" class="text-decoration-none">&larr; Back to Applications</a>
+        <h1 class="mt-2 mb-0">@Model.Unit.PropertyName &mdash; Unit @Model.Unit.UnitNumber</h1>
+    </div>
+    <div>
+        @await Component.InvokeAsync("ApplicationStatusBadge", new { status = Model.Status })
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row text-muted small">
+            <div class="col-md-5">
+                <strong>Address:</strong> @Model.Unit.FormattedAddress
+            </div>
+            <div class="col-md-2">
+                <strong>Type:</strong> @Model.Unit.UnitTypeName
+            </div>
+            <div class="col-md-2">
+                <strong>Bedrooms:</strong> @Model.Unit.Bedrooms
+            </div>
+            <div class="col-md-3">
+                <strong>Monthly Rent:</strong> @Model.Unit.MonthlyRent.ToString("C")
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.CurrentComment))
+{
+    var alertClass = Model.Status switch
+    {
+        ApplicationStatus.Returned => "alert-warning",
+        ApplicationStatus.Denied => "alert-danger",
+        _ => "alert-info"
+    };
+
+    <div class="alert @alertClass" role="alert">
+        <strong>Reviewer Comment:</strong> @Model.CurrentComment
+    </div>
+}
+
+<ul class="nav nav-tabs mb-3">
+    @foreach (var sec in Enum.GetValues<ApplicationSection>())
+    {
+        var isActive = sec == Model.CurrentSection;
+        var isAllowed = Model.AllowedSections.Contains(sec);
+
+        <li class="nav-item">
+            @if (isAllowed)
+            {
+                <a class="nav-link @(isActive ? "active" : "")"
+                   asp-action="Edit"
+                   asp-route-id="@Model.RentalApplicationId"
+                   asp-route-section="@sec">
+                    @SectionLabel(sec)
+                </a>
+            }
+            else
+            {
+                <span class="nav-link disabled" aria-disabled="true">@SectionLabel(sec)</span>
+            }
+        </li>
+    }
+</ul>
+
+<form asp-action="Edit" asp-route-id="@Model.RentalApplicationId" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="currentSection" value="@Model.CurrentSection" />
+
+    <div class="card">
+        <div class="card-body">
+            @switch (Model.CurrentSection)
+            {
+                case ApplicationSection.ApplicantInfo:
+                    <partial name="_ApplicantInfoSection" for="ApplicantInfo" />
+                    break;
+                case ApplicationSection.ResidenceHistory:
+                    <div data-refresh-region="application-residences-@Model.RentalApplicationId"
+                         data-refresh-url="@Url.Action("List", "Residences", new { applicationId = Model.RentalApplicationId })">
+                        @await Component.InvokeAsync(
+                            "ResidenceHistorySection",
+                            new
+                            {
+                                applicationId = Model.RentalApplicationId,
+                                residences = Model.Residences,
+                                isEditable = Model.IsEditable
+                            })
+                    </div>
+                    <div asp-validation-summary="ModelOnly" class="text-danger mt-3"></div>
+                    break;
+                case ApplicationSection.Summary:
+                    <h2 class="h5 mb-3">Summary</h2>
+                    <p class="text-muted mb-0">Application summary and submission are coming in the next step.</p>
+                    break;
+            }
+        </div>
+        <div class="card-footer d-flex justify-content-between">
+            <div>
+                @if (Model.CurrentSection != ApplicationSection.ApplicantInfo)
+                {
+                    <button type="submit" name="command" value="back" class="btn btn-outline-secondary" formnovalidate>
+                        Back
+                    </button>
+                }
+            </div>
+            <div>
+                @if (Model.IsEditable && Model.CurrentSection != ApplicationSection.Summary)
+                {
+                    <button type="submit" name="command" value="continue" class="btn btn-primary">
+                        Continue
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

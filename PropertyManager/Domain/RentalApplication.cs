@@ -126,6 +126,17 @@ public class RentalApplication
         _residenceHistories.Remove(FindResidence(residenceHistoryId));
     }
 
+    /// <exception cref="ApplicationNotEditableException">Thrown when the application is not in an editable status.</exception>
+    /// <exception cref="ApplicationIncompleteException">Thrown when no residence has been saved.</exception>
+    public void EnsureResidenceHistoryComplete()
+    {
+        EnsureEditable();
+        if (!IsResidenceHistorySaved)
+        {
+            throw new ApplicationIncompleteException([ResidenceHistorySection]);
+        }
+    }
+
     /// <summary>
     /// Submits the application. Requires the unit's leases to be loaded.
     /// </summary>

@@ -130,6 +130,30 @@ public sealed class RentalApplicationTests
     }
 
     [Fact]
+    public void EnsureResidenceHistoryComplete_RequiresResidenceAndEditableStatus()
+    {
+        var application = TestData.Draft();
+
+        application.Invoking(item => item.EnsureResidenceHistoryComplete())
+            .Should().Throw<ApplicationIncompleteException>()
+            .Which.IncompleteSections.Should().Equal("Residence History");
+
+        application.AddResidence(
+            TestData.Address(),
+            "Landlord",
+            "555-0102",
+            new DateOnly(2020, 1, 1),
+            null);
+
+        application.Invoking(item => item.EnsureResidenceHistoryComplete()).Should().NotThrow();
+        application.IsResidenceHistorySaved.Should().BeTrue();
+
+        var submitted = TestData.Submitted();
+        submitted.Invoking(item => item.EnsureResidenceHistoryComplete())
+            .Should().Throw<ApplicationNotEditableException>();
+    }
+
+    [Fact]
     public void UpdateAndRemoveResidence_ChangeTheList()
     {
         var application = TestData.Completed();

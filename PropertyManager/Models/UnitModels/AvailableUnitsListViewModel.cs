@@ -57,18 +57,9 @@ public sealed record AvailableUnitItemViewModel(
     public static AvailableUnitItemViewModel FromDto(AvailableUnitDto dto) => new(
         dto.RentalUnitId,
         dto.PropertyName,
-        FormatAddress(dto.PropertyAddress),
+        AddressFormatter.Format(dto.PropertyAddress),
         dto.UnitNumber,
         dto.Bedrooms,
         dto.MonthlyRent,
         dto.UnitTypeName);
-
-    internal static string FormatAddress(AddressDto address)
-    {
-        var street = string.IsNullOrWhiteSpace(address.Line2)
-            ? address.Line1
-            : $"{address.Line1}, {address.Line2}";
-
-        return $"{street}, {address.City}, {address.State} {address.ZipCode}";
-    }
 }

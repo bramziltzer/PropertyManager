@@ -173,6 +173,325 @@ public class RentalApplicationServiceTests
             .Should().ThrowAsync<ForbiddenException>();
     }
 
+    [Fact]
+    public async Task GetApplicationPageAsync_ForOwner_ReturnsEditableDraftAndNoHistory()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var draft = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(draft);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        var page = await service.GetApplicationPageAsync(draft.RentalApplicationId);
+
+        page.RentalApplicationId.Should().Be(draft.RentalApplicationId);
+        page.Status.Should().Be(ApplicationStatus.Draft);
+        page.CurrentSection.Should().Be(ApplicationSection.ApplicantInfo);
+        page.IsEditable.Should().BeTrue();
+        page.IsPropertyManager.Should().BeFalse();
+        page.IncompleteSections.Should().Equal(
+            ApplicationSection.ApplicantInfo,
+            ApplicationSection.ResidenceHistory);
+        page.AllowedSections.Should().ContainSingle().Which.Should().Be(ApplicationSection.ApplicantInfo);
+        page.History.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetApplicationPageAsync_ForOtherApplicant_ThrowsNotFoundException()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var otherApplicantId = Guid.NewGuid();
+        dbContext.Users.Add(new ApplicationUser { Id = otherApplicantId, UserName = "other@example.com", Email = "other@example.com" });
+        var draft = TestData.Draft(unit, otherApplicantId);
+        dbContext.RentalApplications.Add(draft);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(s => s.GetApplicationPageAsync(draft.RentalApplicationId))
+            .Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task GetApplicationPageAsync_ForManager_ReturnsReadOnlyWithHistory()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var submitted = TestData.Submitted(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(submitted);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ManagerId, isApplicant: false, isPropertyManager: true);
+
+        var page = await service.GetApplicationPageAsync(submitted.RentalApplicationId);
+
+        page.IsEditable.Should().BeFalse();
+        page.IsPropertyManager.Should().BeTrue();
+        page.CurrentSection.Should().Be(ApplicationSection.Summary);
+        page.History.Should().NotBeNull();
+        page.History.Should().ContainSingle(h => h.NewStatus == ApplicationStatus.Submitted);
+    }
+
+    [Fact]
+    public async Task SaveApplicantInfoAsync_PersistsInfoForOwner()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var draft = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(draft);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+        var dto = new SaveApplicantInfoDto(
+            "Ada",
+            "Lovelace",
+            "555-0100",
+            "ada@example.com",
+            new PropertyManager.AppService.AddressDto("10 Main St", null, "Boston", "MA", "02101"));
+
+        await service.SaveApplicantInfoAsync(draft.RentalApplicationId, dto);
+
+        var saved = await dbContext.RentalApplications
+            .AsNoTracking()
+            .SingleAsync(a => a.RentalApplicationId == draft.RentalApplicationId);
+        saved.ApplicantInfo.Should().NotBeNull();
+        saved.ApplicantInfo!.FirstName.Should().Be("Ada");
+        saved.ApplicantInfo.CurrentAddress.City.Should().Be("Boston");
+
+        var page = await service.GetApplicationPageAsync(draft.RentalApplicationId);
+        page.IncompleteSections.Should().Equal(ApplicationSection.ResidenceHistory);
+    }
+
+    [Fact]
+    public async Task SaveApplicantInfoAsync_ForOtherApplicant_ThrowsNotFoundException()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var otherApplicantId = Guid.NewGuid();
+        dbContext.Users.Add(new ApplicationUser { Id = otherApplicantId, UserName = "other@example.com", Email = "other@example.com" });
+        var draft = TestData.Draft(unit, otherApplicantId);
+        dbContext.RentalApplications.Add(draft);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+        var dto = new SaveApplicantInfoDto(
+            "Ada",
+            "Lovelace",
+            "555-0100",
+            "ada@example.com",
+            new PropertyManager.AppService.AddressDto("10 Main St", null, "Boston", "MA", "02101"));
+
+        await service.Invoking(s => s.SaveApplicantInfoAsync(draft.RentalApplicationId, dto))
+            .Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task SaveApplicantInfoAsync_ForNonEditableApplication_ThrowsApplicationNotEditableException()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var submitted = TestData.Submitted(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(submitted);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+        var dto = new SaveApplicantInfoDto(
+            "Grace",
+            "Hopper",
+            "555-0200",
+            "grace@example.com",
+            new PropertyManager.AppService.AddressDto("20 Oak St", null, "Boston", "MA", "02102"));
+
+        await service.Invoking(s => s.SaveApplicantInfoAsync(submitted.RentalApplicationId, dto))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+    }
+
+    [Fact]
+    public async Task ResidenceMutations_AddUpdateAndRemovePersist()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+        var residenceId = await service.AddResidenceAsync(
+            application.RentalApplicationId,
+            CreateResidenceDto("First Landlord"));
+
+        var saved = await dbContext.RentalApplications
+            .AsNoTracking()
+            .Include(item => item.ResidenceHistories)
+            .SingleAsync(item => item.RentalApplicationId == application.RentalApplicationId);
+        saved.ResidenceHistories.Should().ContainSingle(item =>
+            item.ResidenceHistoryId == residenceId &&
+            item.LandlordName == "First Landlord");
+
+        await service.UpdateResidenceAsync(
+            application.RentalApplicationId,
+            residenceId,
+            CreateResidenceDto("Updated Landlord"));
+
+        var updated = await service.GetResidenceAsync(
+            application.RentalApplicationId,
+            residenceId);
+        updated.LandlordName.Should().Be("Updated Landlord");
+
+        await service.RemoveResidenceAsync(application.RentalApplicationId, residenceId);
+
+        var afterRemoval = await service.GetApplicationResidencesAsync(application.RentalApplicationId);
+        afterRemoval.Residences.Should().BeEmpty();
+        (await dbContext.ResidenceHistories.CountAsync()).Should().Be(0);
+        dbContext.RentalApplications
+            .AsNoTracking()
+            .Single(item => item.RentalApplicationId == application.RentalApplicationId)
+            .IsResidenceHistorySaved.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddResidenceAsync_InvalidDates_DoesNotPersist()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+        var request = new SaveResidenceDto(
+            new PropertyManager.AppService.AddressDto("10 Main St", null, "Boston", "MA", "02101"),
+            "Landlord",
+            "555-0100",
+            new DateOnly(2024, 6, 1),
+            new DateOnly(2024, 5, 1));
+
+        await service.Invoking(item => item.AddResidenceAsync(application.RentalApplicationId, request))
+            .Should().ThrowAsync<InvalidResidenceDatesException>();
+
+        (await dbContext.ResidenceHistories.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ResidenceOperations_ForOtherApplicant_ReturnNotFound()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var otherApplicantId = Guid.NewGuid();
+        dbContext.Users.Add(new ApplicationUser
+        {
+            Id = otherApplicantId,
+            UserName = "other@example.com",
+            Email = "other@example.com"
+        });
+        var application = TestData.Draft(unit, otherApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item => item.GetApplicationResidencesAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<NotFoundException>();
+        await service.Invoking(item => item.AddResidenceAsync(
+                application.RentalApplicationId,
+                CreateResidenceDto("Landlord")))
+            .Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task ResidenceMutations_AfterSubmissionAreRejected()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Submitted(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+        var residenceId = application.ResidenceHistories.Single().ResidenceHistoryId;
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item => item.AddResidenceAsync(
+                application.RentalApplicationId,
+                CreateResidenceDto("Landlord")))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+        await service.Invoking(item => item.UpdateResidenceAsync(
+                application.RentalApplicationId,
+                residenceId,
+                CreateResidenceDto("Changed")))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+        await service.Invoking(item => item.RemoveResidenceAsync(
+                application.RentalApplicationId,
+                residenceId))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+        await service.Invoking(item => item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<ApplicationNotEditableException>();
+    }
+
+    [Fact]
+    public async Task EnsureResidenceHistoryCompleteAsync_RequiresAtLeastOneResidence()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        await using var dbContext = await CreateDbContextAsync(connection);
+
+        var unit = await SeedUnitAsync(dbContext);
+        var application = TestData.Draft(unit, TestData.ApplicantId);
+        dbContext.RentalApplications.Add(application);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
+
+        await service.Invoking(item =>
+                item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
+            .Should().ThrowAsync<ApplicationIncompleteException>()
+            .WithMessage("*Residence History*");
+
+        await service.AddResidenceAsync(
+            application.RentalApplicationId,
+            CreateResidenceDto("Landlord"));
+        await service.Invoking(item =>
+                item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
+            .Should().NotThrowAsync();
+    }
+
+    private static SaveResidenceDto CreateResidenceDto(string landlordName) => new(
+        new PropertyManager.AppService.AddressDto("10 Main St", null, "Boston", "MA", "02101"),
+        landlordName,
+        "555-0100",
+        new DateOnly(2020, 1, 1),
+        null);
+
     private static async Task<(RentalUnit Unit1, RentalUnit Unit2)> SeedMultiPropertyApplicationsAsync(
         ApplicationDbContext dbContext)
     {

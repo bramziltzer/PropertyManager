@@ -1,0 +1,89 @@
+@model ApplicantInfoSectionViewModel
+
+@if (Model.IsReadOnly)
+{
+    <h2 class="h5 mb-3">Applicant Information</h2>
+    @if (string.IsNullOrWhiteSpace(Model.FirstName) && string.IsNullOrWhiteSpace(Model.LastName))
+    {
+        <p class="text-muted mb-0">Applicant information has not been provided yet.</p>
+    }
+    else
+    {
+        <dl class="row mb-0">
+            <dt class="col-sm-3">Name</dt>
+            <dd class="col-sm-9">@Model.FirstName @Model.LastName</dd>
+
+            <dt class="col-sm-3">Phone Number</dt>
+            <dd class="col-sm-9">@Model.PhoneNumber</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Current Address</dt>
+            <dd class="col-sm-9">@Model.CurrentAddress.FormatSingleLine()</dd>
+        </dl>
+    }
+}
+else
+{
+    <h2 class="h5 mb-3">Applicant Information</h2>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label asp-for="FirstName" class="form-label"></label>
+            <input asp-for="FirstName" class="form-control" />
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="LastName" class="form-label"></label>
+            <input asp-for="LastName" class="form-control" />
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <label asp-for="PhoneNumber" class="form-label"></label>
+            <input asp-for="PhoneNumber" class="form-control" />
+            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+    </div>
+
+    <h3 class="h6 mt-4 mb-3">Current Address</h3>
+
+    <div class="mb-3">
+        <label asp-for="CurrentAddress.Line1" class="form-label"></label>
+        <input asp-for="CurrentAddress.Line1" class="form-control" />
+        <span asp-validation-for="CurrentAddress.Line1" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="CurrentAddress.Line2" class="form-label"></label>
+        <input asp-for="CurrentAddress.Line2" class="form-control" />
+        <span asp-validation-for="CurrentAddress.Line2" class="text-danger"></span>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-5">
+            <label asp-for="CurrentAddress.City" class="form-label"></label>
+            <input asp-for="CurrentAddress.City" class="form-control" />
+            <span asp-validation-for="CurrentAddress.City" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="CurrentAddress.State" class="form-label"></label>
+            <input asp-for="CurrentAddress.State" class="form-control" />
+            <span asp-validation-for="CurrentAddress.State" class="text-danger"></span>
+        </div>
+        <div class="col-md-3">
+            <label asp-for="CurrentAddress.ZipCode" class="form-label"></label>
+            <input asp-for="CurrentAddress.ZipCode" class="form-control" />
+            <span asp-validation-for="CurrentAddress.ZipCode" class="text-danger"></span>
+        </div>
+    </div>
+}

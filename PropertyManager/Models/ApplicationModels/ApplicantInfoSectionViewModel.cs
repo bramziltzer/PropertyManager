@@ -1,0 +1,62 @@
+using System.ComponentModel.DataAnnotations;
+using PropertyManager.AppService.Applications;
+using PropertyManager.Data.Configurations;
+
+namespace PropertyManager.Models.ApplicationModels;
+
+public sealed class ApplicantInfoSectionViewModel
+{
+    [Required]
+    [StringLength(100)]
+    [Display(Name = "First Name")]
+    public string FirstName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
+    [Display(Name = "Last Name")]
+    public string LastName { get; set; } = string.Empty;
+
+    [Required]
+    [Phone]
+    [StringLength(ColumnLengths.PhoneNumber)]
+    [Display(Name = "Phone Number")]
+    public string PhoneNumber { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    [StringLength(256)]
+    [Display(Name = "Email")]
+    public string Email { get; set; } = string.Empty;
+
+    public AddressViewModel CurrentAddress { get; set; } = new();
+
+    public bool IsReadOnly { get; set; }
+
+    public SaveApplicantInfoDto ToDto() => new(
+        FirstName,
+        LastName,
+        PhoneNumber,
+        Email,
+        CurrentAddress.ToDto());
+
+    public static ApplicantInfoSectionViewModel FromDto(ApplicantInfoDto? dto, bool isReadOnly)
+    {
+        if (dto is null)
+        {
+            return new ApplicantInfoSectionViewModel
+            {
+                IsReadOnly = isReadOnly
+            };
+        }
+
+        return new ApplicantInfoSectionViewModel
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            PhoneNumber = dto.PhoneNumber,
+            Email = dto.Email,
+            CurrentAddress = AddressViewModel.FromDto(dto.CurrentAddress),
+            IsReadOnly = isReadOnly
+        };
+    }
+}

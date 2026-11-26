@@ -26,4 +26,14 @@ public sealed record AddressDto(
             State.Trim(),
             ZipCode.Trim());
     }
+
+    public static AddressDto FromDomainAddress(Address address)
+    {
+        return new AddressDto(
+            address.Line1,
+            address.Line2,
+            address.City,
+            address.State,
+            address.ZipCode);
+    }
 }

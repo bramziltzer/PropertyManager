@@ -30,6 +30,8 @@ public sealed class ApplicationPageViewModel
 
     public bool CanWithdraw => !IsPropertyManager && ApplicationStatusRules.OpenStatuses.Contains(Status);
 
+    public bool CanReview => IsPropertyManager && Status == ApplicationStatus.Submitted;
+
     public IReadOnlyList<ApplicationSection> IncompleteSections { get; set; } = [];
 
     public IReadOnlyList<ApplicationSection> AllowedSections { get; set; } = [];
@@ -40,7 +42,7 @@ public sealed class ApplicationPageViewModel
 
     public IReadOnlyList<ResidenceDto> Residences { get; set; } = [];
 
-    public IReadOnlyList<ApplicationStatusChangeDto>? History { get; set; }
+    public IReadOnlyList<ApplicationStatusChangeViewModel>? History { get; set; }
 
     public static ApplicationPageViewModel FromDto(ApplicationPageDto dto) => new()
     {
@@ -58,7 +60,9 @@ public sealed class ApplicationPageViewModel
         CurrentComment = dto.CurrentComment,
         ApplicantInfo = ApplicantInfoSectionViewModel.FromDto(dto.ApplicantInfo, !dto.IsEditable),
         Residences = dto.Residences,
-        History = dto.History
+        History = dto.History?
+            .Select(ApplicationStatusChangeViewModel.FromDto)
+            .ToList()
     };
 
     public void PopulatePageState(ApplicationPageDto dto, ApplicationSection currentSection)
@@ -77,7 +81,9 @@ public sealed class ApplicationPageViewModel
         CurrentComment = dto.CurrentComment;
         ApplicantInfo.IsReadOnly = !dto.IsEditable;
         Residences = dto.Residences;
-        History = dto.History;
+        History = dto.History?
+            .Select(ApplicationStatusChangeViewModel.FromDto)
+            .ToList();
     }
 }
 

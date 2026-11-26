@@ -1,5 +1,6 @@
 using PropertyManager.AppService.Applications;
 using PropertyManager.AppService.Properties;
+using PropertyManager.AppService.Reviews;
 using PropertyManager.AppService.Units;
 using PropertyManager.Infrastructure.CurrentUser;
 
@@ -17,6 +18,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IPropertyService, PropertyService>();
         services.AddScoped<IRentalUnitService, RentalUnitService>();
         services.AddScoped<IRentalApplicationService, RentalApplicationService>();
+        services.AddScoped<IReviewService, ReviewService>();
 
         return services;
     }

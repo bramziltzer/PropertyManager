@@ -14,6 +14,7 @@ public sealed class ApplicationExceptionFilter(ILogger<ApplicationExceptionFilte
         {
             NotFoundException exception => (StatusCodes.Status404NotFound, "Not Found", exception.Message),
             ForbiddenException exception => (StatusCodes.Status403Forbidden, "Forbidden", exception.Message),
+            ConcurrencyException exception => (StatusCodes.Status409Conflict, "Conflict", exception.Message),
             DomainException exception => (StatusCodes.Status422UnprocessableEntity, "Business Rule Violation", exception.Message),
             _ => default
         };

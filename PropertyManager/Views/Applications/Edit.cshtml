@@ -18,6 +18,14 @@
         <h1 class="mt-2 mb-0">@Model.Unit.PropertyName &mdash; Unit @Model.Unit.UnitNumber</h1>
     </div>
     <div class="d-flex align-items-center gap-2">
+        @if (Model.CanReview)
+        {
+            <button type="button"
+                    class="btn btn-primary btn-sm"
+                    data-modal-url="@Url.Action("Review", "Reviews", new { id = Model.RentalApplicationId })">
+                Review Application
+            </button>
+        }
         @if (Model.CanWithdraw)
         {
             <button type="button"
@@ -143,6 +151,13 @@
         </div>
     </div>
 </form>
+
+@if (Model.IsPropertyManager && Model.History is not null)
+{
+    <div class="mt-4">
+        @await Component.InvokeAsync("ApplicationHistory", new { history = Model.History })
+    </div>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -48,7 +48,7 @@ public class UnitsControllerTests
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
         appService
-            .Setup(s => s.StartAsync(10, It.IsAny<CancellationToken>()))
+            .Setup(s => s.StartApplicationAsync(10, It.IsAny<CancellationToken>()))
             .ReturnsAsync(applicationId);
 
         var controller = new UnitsController(unitService.Object, appService.Object);
@@ -67,7 +67,7 @@ public class UnitsControllerTests
         var unitService = new Mock<IRentalUnitService>(MockBehavior.Strict);
         var appService = new Mock<IRentalApplicationService>();
         appService
-            .Setup(s => s.StartAsync(10, It.IsAny<CancellationToken>()))
+            .Setup(s => s.StartApplicationAsync(10, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new DuplicateOpenApplicationException());
 
         var controller = new UnitsController(unitService.Object, appService.Object)

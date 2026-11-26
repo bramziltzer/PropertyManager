@@ -5,10 +5,6 @@ public sealed record AvailableUnitsFilter(
     int? Bedrooms = null,
     decimal? MaxRent = null);
 
-public sealed record PropertyFilterOptionDto(
-    int PropertyId,
-    string Name);
-
 public sealed record AvailableUnitDto(
     int RentalUnitId,
     int PropertyId,

@@ -1,0 +1,67 @@
+@model ApplicationListViewModel
+
+@{
+    ViewData["Title"] = Model.IsPropertyManager ? "All Applications" : "My Applications";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">@ViewData["Title"]</h1>
+    @if (!Model.IsPropertyManager)
+    {
+        <a asp-controller="Units" asp-action="Index" class="btn btn-primary">Browse Units</a>
+    }
+</div>
+
+<partial name="_ApplicationFilter" model="Model.Filter" />
+
+@if (Model.Applications.Count == 0)
+{
+    <div class="alert alert-info">
+        No applications match the current filters.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Unit</th>
+                    <th>Monthly Rent</th>
+                    @if (Model.IsPropertyManager)
+                    {
+                        <th>Applicant</th>
+                    }
+                    <th>Status</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var application in Model.Applications)
+                {
+                    <tr>
+                        <td>@application.PropertyName</td>
+                        <td>@application.UnitNumber</td>
+                        <td>@application.MonthlyRent.ToString("C")</td>
+                        @if (Model.IsPropertyManager)
+                        {
+                            <td>@application.ApplicantDisplayName</td>
+                        }
+                        <td>
+                            @await Component.InvokeAsync("ApplicationStatusBadge", new { status = application.Status })
+                        </td>
+                        <td class="text-end">
+                            <a asp-controller="Applications"
+                               asp-action="Edit"
+                               asp-route-id="@application.RentalApplicationId"
+                               class="btn btn-sm btn-outline-primary">
+                                @(application.IsEditable && !Model.IsPropertyManager ? "Continue" : "View")
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

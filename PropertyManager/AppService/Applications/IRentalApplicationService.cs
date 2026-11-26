@@ -2,5 +2,9 @@ namespace PropertyManager.AppService.Applications;
 
 public interface IRentalApplicationService
 {
-    Task<Guid> StartAsync(int unitId, CancellationToken cancellationToken = default);
+    Task<Guid> StartApplicationAsync(int unitId, CancellationToken cancellationToken = default);
+
+    Task<ApplicationListResultDto> GetApplicationsAsync(
+        ApplicationListFilter filter,
+        CancellationToken cancellationToken = default);
 }

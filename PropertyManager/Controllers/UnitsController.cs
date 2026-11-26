@@ -38,7 +38,7 @@ public class UnitsController(
     {
         try
         {
-            var applicationId = await rentalApplicationService.StartAsync(unitId, cancellationToken);
+            var applicationId = await rentalApplicationService.StartApplicationAsync(unitId, cancellationToken);
             return RedirectToAction("Edit", "Applications", new { id = applicationId });
         }
         catch (DomainException ex)

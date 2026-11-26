@@ -58,11 +58,7 @@ public sealed class RentalUnitService(
                 unit.UnitType.Name))
             .ToListAsync(cancellationToken);
 
-        var propertyFilterOptions = await dbContext.Properties
-            .AsNoTracking()
-            .OrderBy(property => property.Name)
-            .Select(property => new PropertyFilterOptionDto(property.PropertyId, property.Name))
-            .ToListAsync(cancellationToken);
+        var propertyFilterOptions = await dbContext.GetPropertyFilterOptionsAsync(cancellationToken);
 
         return new AvailableUnitsResultDto(units, propertyFilterOptions);
     }

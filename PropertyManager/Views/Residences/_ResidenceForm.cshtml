@@ -1,0 +1,82 @@
+@model ResidenceFormViewModel
+
+<form asp-controller="Residences"
+      asp-action="@(Model.IsEdit ? "Edit" : "Create")"
+      asp-route-applicationId="@Model.RentalApplicationId"
+      asp-route-id="@(Model.IsEdit ? Model.ResidenceHistoryId : null)"
+      method="post"
+      data-modal-form>
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="RentalApplicationId" />
+    @if (Model.IsEdit)
+    {
+        <input type="hidden" asp-for="ResidenceHistoryId" />
+    }
+    <div class="modal-header">
+        <h2 class="modal-title fs-5">@Model.Title</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <div data-modal-error class="alert alert-danger d-none" role="alert"></div>
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <h3 class="h6 mb-3">Address</h3>
+        <div class="mb-3">
+            <label asp-for="Address.Line1" class="form-label"></label>
+            <input asp-for="Address.Line1" class="form-control" />
+            <span asp-validation-for="Address.Line1" class="text-danger"></span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Address.Line2" class="form-label"></label>
+            <input asp-for="Address.Line2" class="form-control" />
+            <span asp-validation-for="Address.Line2" class="text-danger"></span>
+        </div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-5">
+                <label asp-for="Address.City" class="form-label"></label>
+                <input asp-for="Address.City" class="form-control" />
+                <span asp-validation-for="Address.City" class="text-danger"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="Address.State" class="form-label"></label>
+                <input asp-for="Address.State" class="form-control" />
+                <span asp-validation-for="Address.State" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="Address.ZipCode" class="form-label"></label>
+                <input asp-for="Address.ZipCode" class="form-control" />
+                <span asp-validation-for="Address.ZipCode" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label asp-for="LandlordName" class="form-label"></label>
+                <input asp-for="LandlordName" class="form-control" />
+                <span asp-validation-for="LandlordName" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="LandlordPhone" class="form-label"></label>
+                <input asp-for="LandlordPhone" class="form-control" />
+                <span asp-validation-for="LandlordPhone" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="MoveInDate" class="form-label"></label>
+                <input asp-for="MoveInDate" class="form-control" />
+                <span asp-validation-for="MoveInDate" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="MoveOutDate" class="form-label"></label>
+                <input asp-for="MoveOutDate" class="form-control" />
+                <span asp-validation-for="MoveOutDate" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">@Model.SubmitLabel</button>
+    </div>
+</form>

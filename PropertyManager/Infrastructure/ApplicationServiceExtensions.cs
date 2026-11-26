@@ -8,6 +8,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
+        services.AddMemoryCache();
         services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<ApplicationExceptionFilter>();

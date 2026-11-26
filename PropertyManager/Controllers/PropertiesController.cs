@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using PropertyManager.AppService.Properties;
 using PropertyManager.Domain;
 using PropertyManager.Models;
+using PropertyManager.Models.PropertyModels;
 
 namespace PropertyManager.Controllers;
 

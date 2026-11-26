@@ -8,38 +8,39 @@
 }
 else
 {
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Address</th>
-                    <th class="text-end">Units</th>
-                    <th class="text-end">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.Name</td>
-                        <td>@item.FormattedAddress</td>
-                        <td class="text-end">@item.UnitCount</td>
-                        <td class="text-end text-nowrap">
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    data-modal-url="@Url.Action("Edit", new { id = item.PropertyId })">
-                                Edit
-                            </button>
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-danger"
-                                    data-modal-url="@Url.Action("Delete", new { id = item.PropertyId })">
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    <div class="d-flex flex-column gap-4">
+        @foreach (var item in Model)
+        {
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h2 class="h5 mb-0">@item.Name</h2>
+                        <small class="text-muted">@item.FormattedAddress</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-sm btn-primary"
+                                data-modal-url="@Url.Action("Create", "PropertyUnits", new { propertyId = item.PropertyId })">
+                            Add Unit
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary"
+                                data-modal-url="@Url.Action("Edit", new { propertyId = item.PropertyId })">
+                            Edit
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger"
+                                data-modal-url="@Url.Action("Delete", new { propertyId = item.PropertyId })">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body"
+                     data-refresh-region="property-units-@item.PropertyId"
+                     data-refresh-url="@Url.Action("List", "PropertyUnits", new { propertyId = item.PropertyId })">
+                    @await Component.InvokeAsync("PropertyUnits", new { propertyId = item.PropertyId, units = item.Units })
+                </div>
+            </div>
+        }
     </div>
 }

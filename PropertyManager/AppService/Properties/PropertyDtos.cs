@@ -11,7 +11,8 @@ public sealed record PropertySummaryDto(
     int PropertyId,
     string Name,
     AddressDto Address,
-    int UnitCount);
+    int UnitCount,
+    IReadOnlyList<UnitDto> Units);
 
 /// <summary>
 /// Represents detailed information about a property, including its address and number of units.

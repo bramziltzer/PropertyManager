@@ -1,0 +1,51 @@
+@model PropertyUnitsViewModel
+
+@if (Model.Units.Count == 0)
+{
+    <p class="text-muted mb-0">No units have been added to this property yet.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Unit #</th>
+                    <th>Type</th>
+                    <th class="text-end">Bedrooms</th>
+                    <th class="text-end">Monthly Rent</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var unit in Model.Units)
+                {
+                    <tr>
+                        <td>@unit.UnitNumber</td>
+                        <td>
+                            @unit.UnitTypeName
+                            @if (!unit.IsUnitTypeActive)
+                            {
+                                <span class="badge text-bg-secondary ms-1">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end">@unit.Bedrooms</td>
+                        <td class="text-end">@unit.MonthlyRent.ToString("C")</td>
+                        <td class="text-end text-nowrap">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    data-modal-url="@Url.Action("Edit", "PropertyUnits", new { id = unit.RentalUnitId })">
+                                Edit
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    data-modal-url="@Url.Action("Delete", "PropertyUnits", new { id = unit.RentalUnitId })">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

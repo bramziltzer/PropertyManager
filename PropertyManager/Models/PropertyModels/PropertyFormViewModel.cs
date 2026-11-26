@@ -1,7 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using PropertyManager.AppService;
 using PropertyManager.AppService.Properties;
 
-namespace PropertyManager.Models;
+namespace PropertyManager.Models.PropertyModels;
 
 public sealed class PropertyFormViewModel
 {

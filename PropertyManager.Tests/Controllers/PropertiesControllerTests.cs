@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using PropertyManager.AppService.Properties;
 using PropertyManager.Controllers;
-using PropertyManager.Models;
+using PropertyManager.Models.PropertyModels;
 
 namespace PropertyManager.Tests.Controllers;
 

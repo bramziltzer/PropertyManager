@@ -281,6 +281,7 @@ public class PropertyServiceTests
     private sealed class StubCurrentUser(Guid id, bool isPropertyManager) : ICurrentUser
     {
         public Guid Id => id;
+        public bool IsApplicant => !isPropertyManager;
         public bool IsPropertyManager => isPropertyManager;
     }
 }

@@ -2,6 +2,13 @@
 
 public static class ApplicationStatusRules
 {
+    public static readonly HashSet<ApplicationStatus> OpenStatuses =
+    [
+        ApplicationStatus.Draft,
+        ApplicationStatus.Submitted,
+        ApplicationStatus.Returned
+    ];
+
     public static bool RequiresComment(ApplicationStatus status) =>
         status is ApplicationStatus.Returned or ApplicationStatus.Denied;
 

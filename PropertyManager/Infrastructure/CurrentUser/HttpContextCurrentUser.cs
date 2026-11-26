@@ -25,6 +25,9 @@ public sealed class HttpContextCurrentUser(IHttpContextAccessor httpContextAcces
         }
     }
 
+    public bool IsApplicant =>
+        httpContextAccessor.HttpContext?.User.IsInRole(RoleNames.Applicant) == true;
+
     public bool IsPropertyManager =>
         httpContextAccessor.HttpContext?.User.IsInRole(RoleNames.PropertyManager) == true;
 }

@@ -41,7 +41,30 @@ public class HttpContextCurrentUserTests
         var currentUser = new HttpContextCurrentUser(accessor);
 
         currentUser.Id.Should().Be(userId);
+        currentUser.IsApplicant.Should().BeFalse();
         currentUser.IsPropertyManager.Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsApplicant_ReturnsTrue_WhenApplicantRoleClaimPresent()
+    {
+        var userId = Guid.NewGuid();
+        var accessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(
+                [
+                    new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+                    new Claim(ClaimTypes.Role, RoleNames.Applicant)
+                ], "Test"))
+            }
+        };
+        var currentUser = new HttpContextCurrentUser(accessor);
+
+        currentUser.Id.Should().Be(userId);
+        currentUser.IsApplicant.Should().BeTrue();
+        currentUser.IsPropertyManager.Should().BeFalse();
     }
 
     [Fact]

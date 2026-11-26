@@ -4,5 +4,7 @@ public interface ICurrentUser
 {
     Guid Id { get; }
 
+    bool IsApplicant { get; }
+
     bool IsPropertyManager { get; }
 }

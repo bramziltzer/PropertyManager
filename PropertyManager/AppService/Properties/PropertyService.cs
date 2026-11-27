@@ -10,13 +10,15 @@ namespace PropertyManager.AppService.Properties;
 public sealed class PropertyService(
     ApplicationDbContext dbContext,
     ICurrentUser currentUser,
-    IMemoryCache memoryCache) : IPropertyService
+    IMemoryCache memoryCache,
+    TimeProvider? timeProvider = null) : IPropertyService
 {
     private const string UnitTypeOptionsCacheKey = "PropertyService.UnitTypeOptions";
     private static readonly TimeSpan UnitTypeOptionsCacheDuration = TimeSpan.FromMinutes(5);
     public async Task<IReadOnlyList<PropertySummaryDto>> GetPropertiesAsync(CancellationToken cancellationToken = default)
     {
         EnsurePropertyManager();
+        var today = DateOnly.FromDateTime((timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime);
 
         return await dbContext.Properties
             .AsNoTracking()
@@ -42,7 +44,8 @@ public sealed class PropertyService(
                         unit.Kind,
                         unit.UnitType.Name,
                         unit.UnitType.IsActive,
-                        unit.Applications.Any() || unit.Leases.Any()))
+                        unit.Applications.Any() || unit.Leases.Any(),
+                        unit.Leases.Any(lease => lease.BeginDate <= today && lease.EndDate >= today)))
                     .ToList()))
             .ToListAsync(cancellationToken);
     }
@@ -111,6 +114,7 @@ public sealed class PropertyService(
     public async Task<IReadOnlyList<UnitDto>> GetUnitsAsync(int propertyId, CancellationToken cancellationToken = default)
     {
         EnsurePropertyManager();
+        var today = DateOnly.FromDateTime((timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime);
 
         var propertyExists = await dbContext.Properties
             .AsNoTracking()
@@ -134,13 +138,15 @@ public sealed class PropertyService(
                 unit.Kind,
                 unit.UnitType.Name,
                 unit.UnitType.IsActive,
-                unit.Applications.Any() || unit.Leases.Any()))
+                unit.Applications.Any() || unit.Leases.Any(),
+                unit.Leases.Any(lease => lease.BeginDate <= today && lease.EndDate >= today)))
             .ToListAsync(cancellationToken);
     }
 
     public async Task<UnitDto> GetUnitAsync(int unitId, CancellationToken cancellationToken = default)
     {
         EnsurePropertyManager();
+        var today = DateOnly.FromDateTime((timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime);
 
         var unit = await dbContext.RentalUnits
             .AsNoTracking()
@@ -154,7 +160,8 @@ public sealed class PropertyService(
                 item.Kind,
                 item.UnitType.Name,
                 item.UnitType.IsActive,
-                item.Applications.Any() || item.Leases.Any()))
+                item.Applications.Any() || item.Leases.Any(),
+                item.Leases.Any(lease => lease.BeginDate <= today && lease.EndDate >= today)))
             .FirstOrDefaultAsync(cancellationToken);
 
         return unit ?? throw new NotFoundException($"Unit {unitId} was not found.");

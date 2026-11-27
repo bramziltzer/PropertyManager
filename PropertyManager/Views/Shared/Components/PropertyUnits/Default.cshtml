@@ -12,6 +12,7 @@ else
                 <tr>
                     <th>Unit #</th>
                     <th>Type</th>
+                    <th>Status</th>
                     <th class="text-end">Bedrooms</th>
                     <th class="text-end">Monthly Rent</th>
                     <th class="text-end">Actions</th>
@@ -27,6 +28,16 @@ else
                             @if (!unit.IsUnitTypeActive)
                             {
                                 <span class="badge text-bg-secondary ms-1">Inactive</span>
+                            }
+                        </td>
+                        <td>
+                            @if (unit.IsLeased)
+                            {
+                                <span class="badge text-bg-success">Leased</span>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">Available</span>
                             }
                         </td>
                         <td class="text-end">@unit.Bedrooms</td>

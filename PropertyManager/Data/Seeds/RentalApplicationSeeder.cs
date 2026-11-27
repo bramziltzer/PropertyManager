@@ -44,6 +44,12 @@ public class RentalApplicationSeeder(
                 continue;
             }
 
+            // Seed data must not create a new draft or application for an already leased unit.
+            if (!unit.IsAvailable(today))
+            {
+                continue;
+            }
+
             var application = RentalApplication.StartDraft(unit, applicant.Id, today);
             var submittedAt = now.AddHours(-2).AddMinutes(index);
             var name = faker.Name;

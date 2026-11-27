@@ -10,7 +10,8 @@ public sealed record UnitListItemViewModel(
     decimal MonthlyRent,
     string UnitTypeName,
     bool IsUnitTypeActive,
-    bool HasApplicationsOrLeases)
+    bool HasApplicationsOrLeases,
+    bool IsLeased = false)
 {
     public static UnitListItemViewModel FromDto(UnitDto dto) => new(
         dto.RentalUnitId,
@@ -20,7 +21,8 @@ public sealed record UnitListItemViewModel(
         dto.MonthlyRent,
         dto.UnitTypeName,
         dto.IsUnitTypeActive,
-        dto.HasApplicationsOrLeases);
+        dto.HasApplicationsOrLeases,
+        dto.IsLeased);
 }
 
 public sealed record PropertyUnitsViewModel(

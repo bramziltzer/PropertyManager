@@ -14,7 +14,8 @@ public sealed record UnitDto(
     UnitTypeKind Kind,
     string UnitTypeName,
     bool IsUnitTypeActive,
-    bool HasApplicationsOrLeases);
+    bool HasApplicationsOrLeases,
+    bool IsLeased = false);
 
 /// <summary>
 /// Represents a selectable unit type option.

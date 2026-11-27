@@ -34,7 +34,6 @@
                 Withdraw Application
             </button>
         }
-        @await Component.InvokeAsync("ApplicationStatusBadge", new { status = Model.Status })
     </div>
 </div>
 
@@ -56,6 +55,8 @@
         </div>
     </div>
 </div>
+
+@await Component.InvokeAsync("ApplicationStatusBadge", new { status = Model.Status })
 
 @if (!string.IsNullOrWhiteSpace(Model.CurrentComment))
 {

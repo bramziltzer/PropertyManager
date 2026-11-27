@@ -5,8 +5,7 @@ public sealed record HomeIndexCardViewModel(
     string Description,
     string Controller,
     string Action,
-    string LinkText,
-    bool IsPrimary);
+    string LinkText);
 
 public sealed record HomeIndexViewModel(
     bool IsAuthenticated,
@@ -26,15 +25,13 @@ public sealed record HomeIndexViewModel(
             "Create, update, and remove properties and maintain unit listings and pricing.",
             "Properties",
             "Index",
-            "Manage Properties",
-            true),
+            "Manage Properties"),
         new(
             "Rental Applications",
             "Review submitted applications, view status history, and approve, return, or deny requests.",
             "Applications",
             "Index",
-            "View Applications",
-            false)
+            "View Applications")
     ];
 
     private static IReadOnlyList<HomeIndexCardViewModel> ApplicantCards { get; } =
@@ -44,14 +41,12 @@ public sealed record HomeIndexViewModel(
             "Filter available apartments by property, bedroom count, and monthly rent, and start an application.",
             "Units",
             "Index",
-            "Browse Units",
-            true),
+            "Browse Units"),
         new(
             "My Applications",
             "Continue draft applications, respond to returned applications, or check your application status.",
             "Applications",
             "Index",
-            "View Applications",
-            false)
+            "View Applications")
     ];
 }

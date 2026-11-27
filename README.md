@@ -80,3 +80,4 @@ dotnet test PropertyManager.Tests/PropertyManager.Tests.csproj --no-restore
 - Productionize the application configuration and secrets management
 - Assessment requirements state that Withdrawal is a terminal status for rental applications, but users may want to restart the process after withdrawing.
   - Consider deleting allowing deletion of withdrawn applications to enable restarting the process, or add a new state transition to allow reactivation.
+- Implement password recovery and confirmation mechanisms for user accounts.

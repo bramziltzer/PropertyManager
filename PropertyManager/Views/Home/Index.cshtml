@@ -23,7 +23,7 @@
                             <h2 class="h5 card-title">@card.Title</h2>
                             <p class="card-text text-muted flex-grow-1">@card.Description</p>
                             <div>
-                                <a class="btn @(card.IsPrimary ? "btn-primary" : "btn-outline-primary")"
+                                <a class="btn btn-outline-primary"
                                    asp-controller="@card.Controller"
                                    asp-action="@card.Action">@card.LinkText</a>
                             </div>

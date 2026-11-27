@@ -2,9 +2,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Moq;
+using PropertyManager.AppService;
 using PropertyManager.AppService.Properties;
 using PropertyManager.Controllers;
+using PropertyManager.Models;
 using PropertyManager.Models.PropertyModels;
 
 namespace PropertyManager.Tests.Controllers;
@@ -99,5 +102,29 @@ public class PropertiesControllerTests
         var json = result.Should().BeOfType<JsonResult>().Subject;
         JsonSerializer.Serialize(json.Value).Should().Be("""{"success":true,"refresh":"properties"}""");
         service.Verify(s => s.UpdateAsync(7, It.IsAny<SavePropertyRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteGet_DisablesDelete_WhenPropertyHasUnits()
+    {
+        var service = new Mock<IPropertyService>();
+        service.Setup(s => s.GetPropertyAsync(7, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PropertyDetailDto(
+                7,
+                "Oakwood",
+                new AddressDto("1 Main St", null, "Madison", "WI", "53703"),
+                2));
+        var controller = new PropertiesController(service.Object);
+        var url = new Mock<IUrlHelper>();
+        url.Setup(u => u.Action(It.IsAny<UrlActionContext>())).Returns("/properties/delete");
+        controller.Url = url.Object;
+
+        var result = await controller.Delete(7, CancellationToken.None);
+
+        var partial = result.Should().BeOfType<PartialViewResult>().Subject;
+        partial.ViewName.Should().Be("Modal/_ConfirmDelete");
+        var model = partial.Model.Should().BeOfType<ConfirmDeleteViewModel>().Subject;
+        model.CanDelete.Should().BeFalse();
+        model.Detail.Should().Contain("2 unit(s)");
     }
 }

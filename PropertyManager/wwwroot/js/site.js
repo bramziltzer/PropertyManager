@@ -42,6 +42,12 @@
         }
     }
 
+    function initializeTooltips(root = document) {
+        root.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(element => {
+            bootstrap.Tooltip.getOrCreateInstance(element);
+        });
+    }
+
     function showModalError(message) {
         let error = modalContent.querySelector("[data-modal-error]");
 
@@ -67,6 +73,7 @@
     function renderModal(html) {
         modalContent.innerHTML = html;
         parseValidation();
+        initializeTooltips(modalContent);
         bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
@@ -112,9 +119,12 @@
             }
 
             region.innerHTML = await response.text();
+            initializeTooltips(region);
             region.dispatchEvent(new CustomEvent("app:refreshed", { bubbles: true }));
         }));
     }
+
+    initializeTooltips();
 
     modalElement.addEventListener("hidden.bs.modal", () => {
         modalContent.innerHTML = "";

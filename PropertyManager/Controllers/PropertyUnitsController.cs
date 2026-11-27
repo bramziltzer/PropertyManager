@@ -105,7 +105,8 @@ public class PropertyUnitsController(IPropertyService propertyService) : Control
             EntityName = $"Unit {unit.UnitNumber}",
             Detail = unit.HasApplicationsOrLeases
                 ? "This unit has applications or leases and cannot be deleted."
-                : null
+                : null,
+            CanDelete = !unit.HasApplicationsOrLeases
         };
 
         return this.ModalForm("Modal/_ConfirmDelete", model);

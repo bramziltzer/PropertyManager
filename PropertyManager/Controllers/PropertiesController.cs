@@ -74,7 +74,8 @@ public class PropertiesController(IPropertyService propertyService) : Controller
             EntityName = property.Name,
             Detail = property.UnitCount > 0
                 ? $"This property currently has {property.UnitCount} unit(s) and cannot be deleted until they are removed."
-                : null
+                : null,
+            CanDelete = property.UnitCount == 0
         };
 
         return this.ModalForm("Modal/_ConfirmDelete", model);

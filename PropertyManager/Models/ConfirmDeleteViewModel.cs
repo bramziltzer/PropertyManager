@@ -25,6 +25,11 @@ public sealed class ConfirmDeleteViewModel
     public string? Detail { get; init; }
 
     /// <summary>
+    /// Whether the delete action is available.
+    /// </summary>
+    public bool CanDelete { get; init; } = true;
+
+    /// <summary>
     /// The title for the delete confirmation modal.
     /// </summary>
     public string Title => $"Delete {EntityName}?";

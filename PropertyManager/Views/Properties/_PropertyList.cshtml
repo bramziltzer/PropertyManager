@@ -28,11 +28,28 @@ else
                                 data-modal-url="@Url.Action("Edit", new { propertyId = item.PropertyId })">
                             Edit
                         </button>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-danger"
-                                data-modal-url="@Url.Action("Delete", new { propertyId = item.PropertyId })">
-                            Delete
-                        </button>
+                        @if (item.UnitCount > 0)
+                        {
+                            <span class="d-inline-block"
+                                  tabindex="0"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-placement="top"
+                                  title="This property has units and cannot be deleted until they are removed.">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger"
+                                        disabled>
+                                    Delete
+                                </button>
+                            </span>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    data-modal-url="@Url.Action("Delete", new { propertyId = item.PropertyId })">
+                                Delete
+                            </button>
+                        }
                     </div>
                 </div>
                 <div class="card-body"

@@ -20,7 +20,7 @@ docker compose up --build -d
 ```
 
 The app applies migrations and seeds the database
-on startup.
+on startup. For assessment purposes, it will seed this data in all environments.
 
 Open `http://localhost:8080` to view the application.
 
@@ -38,9 +38,7 @@ For a local SQL Server instance, configure
 override it with `ConnectionStrings__DefaultConnection` when running the app
 with `dotnet run`.
 
-The `sa` password in `appsettings.json` and `docker-compose.yaml` is a
-local-development default for the assessment. Change it before using this setup
-outside local development.
+The `sa` password in `appsettings.json` and `docker-compose.yaml` is a local-development default for the assessment. Change it before using this setup outside local development.
 
 ## Seeded accounts
 
@@ -55,9 +53,7 @@ outside local development.
 | Applicant | `margaret@example.com` | `PropertyManager1!` |
 | Applicant | `alan@example.com` | `PropertyManager1!` |
 
-The seed is idempotent and includes properties, units, an inactive unit type on an
-existing unit, every application status, and an active lease issued from an
-approved application.
+The seed is idempotent and includes properties, units, an inactive unit type on an existing unit, every application status, and an active lease issued from an approved application.
 
 ## Test
 
@@ -77,7 +73,7 @@ dotnet test PropertyManager.Tests/PropertyManager.Tests.csproj --no-restore
 ## Future Work
 
 - Gate Bogus seeded data to only development environments
-- Productionize the application configuration and secrets management
+- Productionize the application configuration and secrets management (e.g. connection strings)
 - Assessment requirements state that Withdrawal is a terminal status for rental applications, but users may want to restart the process after withdrawing.
   - Consider deleting allowing deletion of withdrawn applications to enable restarting the process, or add a new state transition to allow reactivation.
 - Implement password recovery and confirmation mechanisms for user accounts.

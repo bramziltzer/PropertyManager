@@ -309,6 +309,9 @@ namespace PropertyManager.Data.Migrations
                     b.Property<Guid>("ApplicantUserId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsResidenceHistorySaved")
+                        .HasColumnType("bit");
+
                     b.Property<int>("RentalUnitId")
                         .HasColumnType("int");
 

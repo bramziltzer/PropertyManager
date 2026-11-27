@@ -24,7 +24,6 @@ public class RentalApplicationConfiguration : IEntityTypeConfiguration<RentalApp
         builder.Ignore(application => application.CurrentComment);
         builder.Ignore(application => application.IsEditable);
         builder.Ignore(application => application.IsApplicantInfoSaved);
-        builder.Ignore(application => application.IsResidenceHistorySaved);
         builder.Ignore(application => application.IsReadyToSubmit);
 
         builder.Property<byte[]>("RowVersion").IsRowVersion();

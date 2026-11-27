@@ -177,6 +177,7 @@ public sealed class RentalApplicationService(
                         r.MoveInDate,
                         r.MoveOutDate))
                     .ToList(),
+                app.IsResidenceHistorySaved,
                 app.History
                     .Select(h => new ApplicationHistoryEntry(h.ChangedDate, h.Comment))
                     .ToList()))
@@ -329,12 +330,13 @@ public sealed class RentalApplicationService(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task EnsureResidenceHistoryCompleteAsync(
+    public async Task SaveResidenceHistoryAsync(
         Guid applicationId,
         CancellationToken cancellationToken = default)
     {
         var application = await LoadOwnedApplicationAsync(applicationId, cancellationToken);
-        application.EnsureResidenceHistoryComplete();
+        application.SaveResidenceHistory();
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task SubmitAsync(
@@ -477,17 +479,12 @@ public sealed class RentalApplicationService(
         bool isManager)
     {
         var isApplicantInfoSaved = pageData.ApplicantInfo is not null;
-        var isResidenceHistorySaved = pageData.Residences.Count > 0;
+        var isResidenceHistorySaved = pageData.IsResidenceHistorySaved;
         var incompleteSections = new List<ApplicationSection>();
 
         if (!isApplicantInfoSaved)
         {
             incompleteSections.Add(ApplicationSection.ApplicantInfo);
-        }
-
-        if (!isResidenceHistorySaved)
-        {
-            incompleteSections.Add(ApplicationSection.ResidenceHistory);
         }
 
         var isEditable = !isManager && ApplicationStatusRules.IsEditable(pageData.Status);
@@ -531,6 +528,7 @@ public sealed class RentalApplicationService(
         UnitSummaryDto Unit,
         ApplicantInfoDto? ApplicantInfo,
         IReadOnlyList<ResidenceDto> Residences,
+        bool IsResidenceHistorySaved,
         IReadOnlyList<ApplicationHistoryEntry> HistoryEntries);
 
     private sealed record ApplicationHistoryEntry(DateTimeOffset ChangedDate, string? Comment);

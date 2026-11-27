@@ -80,21 +80,7 @@ public class ApplicationsController(IRentalApplicationService rentalApplicationS
         if (currentSection == ApplicationSection.ResidenceHistory &&
             string.Equals(command, "continue", StringComparison.OrdinalIgnoreCase))
         {
-            try
-            {
-                await rentalApplicationService.EnsureResidenceHistoryCompleteAsync(id, cancellationToken);
-            }
-            catch (ApplicationIncompleteException exception)
-            {
-                ModelState.AddModelError(string.Empty, exception.Message);
-                var page = await rentalApplicationService.GetApplicationPageAsync(
-                    id,
-                    ApplicationSection.ResidenceHistory,
-                    cancellationToken);
-                model.PopulatePageState(page, ApplicationSection.ResidenceHistory);
-                return View(model);
-            }
-
+            await rentalApplicationService.SaveResidenceHistoryAsync(id, cancellationToken);
             return RedirectToAction(nameof(Edit), new { id, section = ApplicationSection.Summary });
         }
 

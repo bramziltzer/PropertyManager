@@ -117,7 +117,20 @@ public sealed class RentalApplicationTests
     }
 
     [Fact]
-    public void ResidenceHistory_IsSavedWhileItHasAtLeastOneResidence()
+    public void Submit_AllowsExplicitlySavedEmptyResidenceHistory()
+    {
+        var application = TestData.Draft();
+        application.SaveApplicantInfo(TestData.Info());
+        application.SaveResidenceHistory();
+
+        application.IsReadyToSubmit.Should().BeTrue();
+
+        var act = () => application.Submit(TestData.ApplicantId, TestData.Now, TestData.Today);
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ResidenceHistory_IsIncompleteUntilSaved()
     {
         var application = TestData.Draft();
         application.IsResidenceHistorySaved.Should().BeFalse();
@@ -126,17 +139,16 @@ public sealed class RentalApplicationTests
         application.IsResidenceHistorySaved.Should().BeTrue();
 
         application.RemoveResidence(residence.ResidenceHistoryId);
-        application.IsResidenceHistorySaved.Should().BeFalse();
+        application.IsResidenceHistorySaved.Should().BeTrue();
     }
 
     [Fact]
-    public void EnsureResidenceHistoryComplete_RequiresResidenceAndEditableStatus()
+    public void SaveResidenceHistory_AllowsEmptyHistoryAndRequiresEditableStatus()
     {
         var application = TestData.Draft();
 
-        application.Invoking(item => item.EnsureResidenceHistoryComplete())
-            .Should().Throw<ApplicationIncompleteException>()
-            .Which.IncompleteSections.Should().Equal("Residence History");
+        application.Invoking(item => item.SaveResidenceHistory()).Should().NotThrow();
+        application.IsResidenceHistorySaved.Should().BeTrue();
 
         application.AddResidence(
             TestData.Address(),
@@ -146,11 +158,11 @@ public sealed class RentalApplicationTests
             null,
             TestData.Today);
 
-        application.Invoking(item => item.EnsureResidenceHistoryComplete()).Should().NotThrow();
+        application.Invoking(item => item.SaveResidenceHistory()).Should().NotThrow();
         application.IsResidenceHistorySaved.Should().BeTrue();
 
         var submitted = TestData.Submitted();
-        submitted.Invoking(item => item.EnsureResidenceHistoryComplete())
+        submitted.Invoking(item => item.SaveResidenceHistory())
             .Should().Throw<ApplicationNotEditableException>();
     }
 

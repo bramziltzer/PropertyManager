@@ -43,7 +43,7 @@ public interface IRentalApplicationService
         Guid residenceHistoryId,
         CancellationToken cancellationToken = default);
 
-    Task EnsureResidenceHistoryCompleteAsync(
+    Task SaveResidenceHistoryAsync(
         Guid applicationId,
         CancellationToken cancellationToken = default);
 

@@ -370,7 +370,7 @@ public class RentalApplicationServiceTests
         dbContext.RentalApplications
             .AsNoTracking()
             .Single(item => item.RentalApplicationId == application.RentalApplicationId)
-            .IsResidenceHistorySaved.Should().BeFalse();
+            .IsResidenceHistorySaved.Should().BeTrue();
     }
 
     [Fact]
@@ -455,12 +455,12 @@ public class RentalApplicationServiceTests
                 application.RentalApplicationId,
                 residenceId))
             .Should().ThrowAsync<ApplicationNotEditableException>();
-        await service.Invoking(item => item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
+        await service.Invoking(item => item.SaveResidenceHistoryAsync(application.RentalApplicationId))
             .Should().ThrowAsync<ApplicationNotEditableException>();
     }
 
     [Fact]
-    public async Task EnsureResidenceHistoryCompleteAsync_RequiresAtLeastOneResidence()
+    public async Task SaveResidenceHistoryAsync_AllowsAndPersistsEmptyResidenceHistory()
     {
         await using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -472,17 +472,16 @@ public class RentalApplicationServiceTests
         await dbContext.SaveChangesAsync();
         var service = CreateService(dbContext, TestData.ApplicantId, isApplicant: true);
 
-        await service.Invoking(item =>
-                item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
-            .Should().ThrowAsync<ApplicationIncompleteException>()
-            .WithMessage("*Residence History*");
+        var savedPage = await service.GetApplicationPageAsync(application.RentalApplicationId);
+        savedPage.IsResidenceHistorySaved.Should().BeFalse();
 
-        await service.AddResidenceAsync(
-            application.RentalApplicationId,
-            CreateResidenceDto("Landlord"));
         await service.Invoking(item =>
-                item.EnsureResidenceHistoryCompleteAsync(application.RentalApplicationId))
+                item.SaveResidenceHistoryAsync(application.RentalApplicationId))
             .Should().NotThrowAsync();
+
+        savedPage = await service.GetApplicationPageAsync(application.RentalApplicationId);
+        savedPage.IsResidenceHistorySaved.Should().BeTrue();
+        savedPage.Residences.Should().BeEmpty();
     }
 
     [Fact]

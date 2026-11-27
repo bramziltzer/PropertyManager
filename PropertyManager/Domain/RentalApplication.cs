@@ -7,7 +7,6 @@ public class RentalApplication
 {
     private const string ApplicantInfoSection = "Applicant Information";
     private const string ResidenceHistorySection = "Residence History";
-
     private static readonly Dictionary<(ApplicationStatus, ApplicationAction), ApplicationStatus> Transitions = new()
     {
         [(ApplicationStatus.Draft, ApplicationAction.Submit)] = ApplicationStatus.Submitted,
@@ -66,7 +65,7 @@ public class RentalApplication
 
     public bool IsApplicantInfoSaved => ApplicantInfo is not null;
 
-    public bool IsResidenceHistorySaved => _residenceHistories.Count > 0;
+    public bool IsResidenceHistorySaved { get; private set; }
 
     public bool IsReadyToSubmit => GetIncompleteSections().Count == 0;
 
@@ -102,6 +101,7 @@ public class RentalApplication
         EnsureEditable();
         var residence = new ResidenceHistory(address, landlordName, landlordPhone, moveInDate, moveOutDate, today);
         _residenceHistories.Add(residence);
+        IsResidenceHistorySaved = true;
         return residence;
     }
 
@@ -127,14 +127,10 @@ public class RentalApplication
     }
 
     /// <exception cref="ApplicationNotEditableException">Thrown when the application is not in an editable status.</exception>
-    /// <exception cref="ApplicationIncompleteException">Thrown when no residence has been saved.</exception>
-    public void EnsureResidenceHistoryComplete()
+    public void SaveResidenceHistory()
     {
         EnsureEditable();
-        if (!IsResidenceHistorySaved)
-        {
-            throw new ApplicationIncompleteException([ResidenceHistorySection]);
-        }
+        IsResidenceHistorySaved = true;
     }
 
     /// <summary>

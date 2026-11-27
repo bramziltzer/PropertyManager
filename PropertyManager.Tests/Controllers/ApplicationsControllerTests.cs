@@ -183,7 +183,7 @@ public class ApplicationsControllerTests
             new ApplicationPageViewModel(),
             CancellationToken.None);
 
-        appService.Verify(item => item.EnsureResidenceHistoryCompleteAsync(
+        appService.Verify(item => item.SaveResidenceHistoryAsync(
             applicationId,
             It.IsAny<CancellationToken>()), Times.Once);
         var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
@@ -210,22 +210,14 @@ public class ApplicationsControllerTests
     }
 
     [Fact]
-    public async Task EditPost_ResidenceContinueWithoutResidence_RerendersWithError()
+    public async Task EditPost_ResidenceContinueWithoutResidence_RedirectsToSummary()
     {
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
-        appService.Setup(item => item.EnsureResidenceHistoryCompleteAsync(
+        appService.Setup(item => item.SaveResidenceHistoryAsync(
                 applicationId,
                 It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new ApplicationIncompleteException(["Residence History"]));
-        appService.Setup(item => item.GetApplicationPageAsync(
-                applicationId,
-                ApplicationSection.ResidenceHistory,
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(CreatePageDto(
-                applicationId,
-                isEditable: true,
-                currentSection: ApplicationSection.ResidenceHistory));
+            .Returns(Task.CompletedTask);
         var controller = new ApplicationsController(appService.Object);
 
         var result = await controller.Edit(
@@ -235,8 +227,8 @@ public class ApplicationsControllerTests
             new ApplicationPageViewModel(),
             CancellationToken.None);
 
-        result.Should().BeOfType<ViewResult>();
-        controller.ModelState[string.Empty]!.Errors.Should().ContainSingle();
+        var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
+        redirect.RouteValues["section"].Should().Be(ApplicationSection.Summary);
     }
 
     [Fact]

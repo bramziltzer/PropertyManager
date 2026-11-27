@@ -1,7 +1,7 @@
 @model PropertyFormViewModel
 
 <form asp-action="@(Model.IsEdit ? "Edit" : "Create")"
-      asp-route-id="@Model.PropertyId"
+      asp-route-propertyId="@Model.PropertyId"
       method="post"
       data-modal-form>
     @Html.AntiForgeryToken()

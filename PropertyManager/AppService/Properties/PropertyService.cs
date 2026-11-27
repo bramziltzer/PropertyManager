@@ -91,7 +91,7 @@ public sealed class PropertyService(
 
         var property = await dbContext.Properties
             .FirstOrDefaultAsync(item => item.PropertyId == id, cancellationToken)
-            ?? throw new NotFoundException($"Property {id} was not found.");
+            ?? throw new NotFoundException($"Property was not found and could not be updated.");
 
         property.Update(request.Name, request.Address.ToDomainAddress());
         await dbContext.SaveChangesAsync(cancellationToken);

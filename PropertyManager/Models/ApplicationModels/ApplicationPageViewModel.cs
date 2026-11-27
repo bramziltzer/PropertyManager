@@ -26,6 +26,8 @@ public sealed class ApplicationPageViewModel
 
     public bool IsReadyToSubmit { get; set; }
 
+    public bool IsApplicant { get; set; }
+
     public bool CanSubmit => IsEditable && CurrentSection == ApplicationSection.Summary && IsReadyToSubmit;
 
     public bool CanWithdraw => !IsPropertyManager && ApplicationStatusRules.OpenStatuses.Contains(Status);
@@ -52,6 +54,7 @@ public sealed class ApplicationPageViewModel
         Unit = UnitSummaryViewModel.FromDto(dto.Unit),
         IsEditable = dto.IsEditable,
         IsPropertyManager = dto.IsPropertyManager,
+        IsApplicant = dto.IsApplicant,
         IsApplicantInfoSaved = dto.IsApplicantInfoSaved,
         IsResidenceHistorySaved = dto.IsResidenceHistorySaved,
         IsReadyToSubmit = dto.IsReadyToSubmit,
@@ -73,6 +76,7 @@ public sealed class ApplicationPageViewModel
         Unit = UnitSummaryViewModel.FromDto(dto.Unit);
         IsEditable = dto.IsEditable;
         IsPropertyManager = dto.IsPropertyManager;
+        IsApplicant = dto.IsApplicant;
         IsApplicantInfoSaved = dto.IsApplicantInfoSaved;
         IsResidenceHistorySaved = dto.IsResidenceHistorySaved;
         IsReadyToSubmit = dto.IsReadyToSubmit;

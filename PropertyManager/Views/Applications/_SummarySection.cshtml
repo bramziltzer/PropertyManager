@@ -2,7 +2,7 @@
 
 <h2 class="h5 mb-3">Summary</h2>
 
-@if (!Model.IsReadyToSubmit && Model.IncompleteSections.Count > 0)
+@if (Model.IsApplicant && !Model.IsReadyToSubmit && Model.IncompleteSections.Count > 0)
 {
     var missing = string.Join(", ", Model.IncompleteSections.Select(section => section switch
     {

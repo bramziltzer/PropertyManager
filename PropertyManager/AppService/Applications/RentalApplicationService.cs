@@ -118,6 +118,7 @@ public sealed class RentalApplicationService(
             pageData.Status,
             ResolveCurrentSection(requestedSection, state),
             pageData.Unit,
+            currentUser.IsApplicant,
             pageData.ApplicantInfo,
             pageData.Residences,
             state.IsApplicantInfoSaved,

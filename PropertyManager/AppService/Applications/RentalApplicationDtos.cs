@@ -87,6 +87,7 @@ public sealed record ApplicationPageDto(
     ApplicationStatus Status,
     ApplicationSection CurrentSection,
     UnitSummaryDto Unit,
+    bool IsApplicant,
     ApplicantInfoDto? ApplicantInfo,
     IReadOnlyList<ResidenceDto> Residences,
     bool IsApplicantInfoSaved,

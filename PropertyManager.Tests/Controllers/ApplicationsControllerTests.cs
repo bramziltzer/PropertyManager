@@ -18,8 +18,7 @@ public class ApplicationsControllerTests
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
 
-        appService
-            .Setup(s => s.GetApplicationsAsync(
+        apList      .Setup(s => s.GetApplicationsAsync(
                 It.Is<ApplicationListFilter>(f => f.Status == ApplicationStatus.Submitted && f.PropertyId == 3),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationListResultDto(
@@ -267,7 +266,7 @@ public class ApplicationsControllerTests
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
         appService.Setup(item => item.SubmitAsync(applicationId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new UnitNotAvailableException("Unit 101 is not available."));
+            .ThrowsAsync(new UnitNotAvailableException(10));
         appService.Setup(item => item.GetApplicationPageAsync(
                 applicationId,
                 ApplicationSection.Summary,

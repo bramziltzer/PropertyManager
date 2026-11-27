@@ -1,8 +1,9 @@
-﻿(() => {
+(() => {
     const modalElement = document.getElementById("app-modal");
     const modalContent = document.getElementById("app-modal-content");
+    const modalLoadErrorTemplate = document.getElementById("app-modal-load-error-template");
 
-    if (!modalElement || !modalContent) {
+    if (!modalElement || !modalContent || !(modalLoadErrorTemplate instanceof HTMLTemplateElement)) {
         return;
     }
 
@@ -10,12 +11,26 @@
         "X-Requested-With": "XMLHttpRequest"
     };
 
+    let lastTrigger = null;
+
+    function friendlyErrorMessage(error, fallback) {
+        if (error instanceof TypeError) {
+            return "A network error occurred. Please check your connection and try again.";
+        }
+
+        return error?.message || fallback;
+    }
+
     async function responseMessage(response) {
         const contentType = response.headers.get("content-type") || "";
 
         if (contentType.includes("application/json") || contentType.includes("application/problem+json")) {
-            const problem = await response.json();
-            return problem.detail || problem.title || `Request failed with status ${response.status}.`;
+            try {
+                const problem = await response.json();
+                return problem.detail || problem.title || `Request failed with status ${response.status}.`;
+            } catch {
+                return `Request failed with status ${response.status}.`;
+            }
         }
 
         return `Request failed with status ${response.status}.`;
@@ -40,6 +55,13 @@
 
         error.textContent = message;
         error.classList.remove("d-none");
+    }
+
+    function renderLoadErrorModal(message) {
+        const content = modalLoadErrorTemplate.content.cloneNode(true);
+        content.querySelector("[data-modal-load-error-message]").textContent = message;
+        modalContent.replaceChildren(content);
+        bootstrap.Modal.getOrCreateInstance(modalElement).show();
     }
 
     function renderModal(html) {
@@ -94,6 +116,14 @@
         }));
     }
 
+    modalElement.addEventListener("hidden.bs.modal", () => {
+        modalContent.innerHTML = "";
+        if (lastTrigger && document.contains(lastTrigger)) {
+            lastTrigger.focus();
+        }
+        lastTrigger = null;
+    });
+
     document.addEventListener("click", async event => {
         const trigger = event.target.closest("[data-modal-url]");
         if (!trigger) {
@@ -101,12 +131,17 @@
         }
 
         event.preventDefault();
+        if (trigger.getAttribute("aria-disabled") === "true") {
+            return;
+        }
+
+        lastTrigger = trigger;
         trigger.setAttribute("aria-disabled", "true");
 
         try {
             await openModal(trigger.dataset.modalUrl);
         } catch (error) {
-            window.alert(error.message || "Unable to load the modal.");
+            renderLoadErrorModal(friendlyErrorMessage(error, "Unable to load the modal."));
         } finally {
             trigger.removeAttribute("aria-disabled");
         }
@@ -119,6 +154,11 @@
         }
 
         event.preventDefault();
+        if (form.dataset.submitting === "true") {
+            return;
+        }
+
+        form.dataset.submitting = "true";
         const submitButtons = form.querySelectorAll("button[type='submit'], input[type='submit']");
         submitButtons.forEach(button => {
             button.disabled = true;
@@ -145,7 +185,9 @@
                     throw new Error(result.message || "The request did not complete successfully.");
                 }
 
-                await refreshRegion(result.refresh);
+                if (result.refresh) {
+                    await refreshRegion(result.refresh);
+                }
                 bootstrap.Modal.getOrCreateInstance(modalElement).hide();
                 return;
             }
@@ -153,13 +195,18 @@
             if (response.ok && contentType.includes("text/html")) {
                 modalContent.innerHTML = await response.text();
                 parseValidation();
+                const firstInvalid = modalContent.querySelector(".input-validation-error, .is-invalid");
+                if (firstInvalid instanceof HTMLElement) {
+                    firstInvalid.focus();
+                }
                 return;
             }
 
             throw new Error(await responseMessage(response));
         } catch (error) {
-            showModalError(error.message || "Unable to submit the form.");
+            showModalError(friendlyErrorMessage(error, "Unable to submit the form."));
         } finally {
+            delete form.dataset.submitting;
             submitButtons.forEach(button => {
                 button.disabled = false;
             });

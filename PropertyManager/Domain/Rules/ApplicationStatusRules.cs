@@ -14,7 +14,4 @@ public static class ApplicationStatusRules
 
     public static bool IsEditable(ApplicationStatus status) =>
         status is ApplicationStatus.Draft or ApplicationStatus.Returned;
-
-    public static bool IsTerminal(ApplicationStatus status) =>
-        status is ApplicationStatus.Approved or ApplicationStatus.Denied or ApplicationStatus.Withdrawn;
 }

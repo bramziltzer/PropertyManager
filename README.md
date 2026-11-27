@@ -46,13 +46,14 @@ outside local development.
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Property Manager | `manager@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `ada@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `grace@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `linus@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `katherine@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `margaret@propertymanager.test` | `PropertyManager1!` |
-| Applicant | `alan@propertymanager.test` | `PropertyManager1!` |
+| Property Manager | `manager@example.com` | `PropertyManager1!` |
+| Property Manager | `manager2@example.com` | `PropertyManager1!` |
+| Applicant | `ada@example.com` | `PropertyManager1!` |
+| Applicant | `grace@example.com` | `PropertyManager1!` |
+| Applicant | `linus@example.com` | `PropertyManager1!` |
+| Applicant | `katherine@example.com` | `PropertyManager1!` |
+| Applicant | `margaret@example.com` | `PropertyManager1!` |
+| Applicant | `alan@example.com` | `PropertyManager1!` |
 
 The seed is idempotent and includes properties, units, an inactive unit type on an
 existing unit, every application status, and an active lease issued from an
@@ -72,3 +73,10 @@ To run tests without restoring first:
 ```bash
 dotnet test PropertyManager.Tests/PropertyManager.Tests.csproj --no-restore
 ```
+
+## Future Work
+
+- Gate Bogus seeded data to only development environments
+- Productionize the application configuration and secrets management
+- Assessment requirements state that Withdrawal is a terminal status for rental applications, but users may want to restart the process after withdrawing.
+  - Consider deleting allowing deletion of withdrawn applications to enable restarting the process, or add a new state transition to allow reactivation.

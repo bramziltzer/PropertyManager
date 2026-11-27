@@ -10,6 +10,7 @@ public class UserSeeder(UserManager<ApplicationUser> userManager) : ISeeder
     {
         var faker = SeedData.CreateFaker(1);
         await EnsureUser(SeedData.ManagerEmail, RoleNames.PropertyManager, faker, cancellationToken);
+        await EnsureUser(SeedData.SecondManagerEmail, RoleNames.PropertyManager, faker, cancellationToken);
 
         foreach (var email in SeedData.ApplicantEmails)
         {

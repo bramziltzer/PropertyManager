@@ -37,12 +37,16 @@ public class DatabaseSeederTests
         var secondCounts = await Counts(dbContext);
 
         secondCounts.Should().BeEquivalentTo(firstCounts);
-        firstCounts.Users.Should().Be(7);
+        firstCounts.Users.Should().Be(8);
         firstCounts.Properties.Should().Be(3);
         firstCounts.Units.Should().Be(9);
         firstCounts.Applications.Should().Be(6);
         firstCounts.Statuses.Should().Be(6);
         firstCounts.ActiveLeases.Should().Be(1);
+
+        (await dbContext.Users.AnyAsync(user => user.Email == "manager2@example.com")).Should().BeTrue();
+        (await dbContext.Users.AllAsync(user => user.Email == null || !user.Email.Contains("propertymanager")))
+            .Should().BeTrue();
 
         var inactiveTypeWithUnit = await dbContext.UnitTypes.AnyAsync(type =>
             type.Kind == UnitTypeKind.Townhouse &&

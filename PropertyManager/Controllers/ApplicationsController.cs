@@ -65,7 +65,9 @@ public class ApplicationsController(IRentalApplicationService rentalApplicationS
                     throw new ApplicationNotEditableException(page.Status);
                 }
 
-                model.PopulatePageState(page, ApplicationSection.ApplicantInfo);
+                model.PreservePostedApplicantInfoAndPopulatePageState(
+                    page,
+                    ApplicationSection.ApplicantInfo);
                 return View(model);
             }
 

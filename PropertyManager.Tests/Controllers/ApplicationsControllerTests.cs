@@ -1,5 +1,7 @@
+using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Moq;
 using PropertyManager.AppService;
 using PropertyManager.AppService.Applications;
@@ -13,12 +15,36 @@ namespace PropertyManager.Tests.Controllers;
 public class ApplicationsControllerTests
 {
     [Fact]
+    public void EditPost_PageStatePropertiesCannotBeBound()
+    {
+        var pageProperties = typeof(ApplicationPageViewModel)
+            .GetProperties()
+            .Where(property => property.CanWrite)
+            .Where(property => property.GetCustomAttribute<BindNeverAttribute>() is null)
+            .Select(property => property.Name);
+        var applicantProperties = typeof(ApplicantInfoSectionViewModel)
+            .GetProperties()
+            .Where(property => property.CanWrite)
+            .Where(property => property.GetCustomAttribute<BindNeverAttribute>() is null)
+            .Select(property => property.Name);
+
+        pageProperties.Should().ContainSingle().Which.Should().Be(
+            nameof(ApplicationPageViewModel.ApplicantInfo));
+        applicantProperties.Should().BeEquivalentTo(
+            nameof(ApplicantInfoSectionViewModel.FirstName),
+            nameof(ApplicantInfoSectionViewModel.LastName),
+            nameof(ApplicantInfoSectionViewModel.PhoneNumber),
+            nameof(ApplicantInfoSectionViewModel.Email),
+            nameof(ApplicantInfoSectionViewModel.CurrentAddress));
+    }
+
+    [Fact]
     public async Task Index_PassesFilterAndPopulatesViewModel()
     {
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
 
-        apList      .Setup(s => s.GetApplicationsAsync(
+        appService.Setup(s => s.GetApplicationsAsync(
                 It.Is<ApplicationListFilter>(f => f.Status == ApplicationStatus.Submitted && f.PropertyId == 3),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ApplicationListResultDto(
@@ -128,12 +154,19 @@ public class ApplicationsControllerTests
 
         var controller = new ApplicationsController(appService.Object);
         controller.ModelState.AddModelError("ApplicantInfo.FirstName", "Required");
+        var postedModel = new ApplicationPageViewModel
+        {
+            ApplicantInfo = new ApplicantInfoSectionViewModel
+            {
+                LastName = "Posted value"
+            }
+        };
 
         var result = await controller.Edit(
             applicationId,
             ApplicationSection.ApplicantInfo,
             "continue",
-            new ApplicationPageViewModel(),
+            postedModel,
             CancellationToken.None);
 
         appService.Verify(s => s.SaveApplicantInfoAsync(
@@ -146,6 +179,7 @@ public class ApplicationsControllerTests
         var model = view.Model.Should().BeOfType<ApplicationPageViewModel>().Subject;
         model.CurrentSection.Should().Be(ApplicationSection.ApplicantInfo);
         model.ApplicantInfo.IsReadOnly.Should().BeFalse();
+        model.ApplicantInfo.LastName.Should().Be("Posted value");
     }
 
     [Fact]
@@ -228,7 +262,7 @@ public class ApplicationsControllerTests
             CancellationToken.None);
 
         var redirect = result.Should().BeOfType<RedirectToActionResult>().Subject;
-        redirect.RouteValues["section"].Should().Be(ApplicationSection.Summary);
+        redirect.RouteValues!["section"].Should().Be(ApplicationSection.Summary);
     }
 
     [Fact]
@@ -257,8 +291,14 @@ public class ApplicationsControllerTests
     {
         var appService = new Mock<IRentalApplicationService>();
         var applicationId = Guid.NewGuid();
+        var applicantInfo = new ApplicantInfoDto(
+            "Ada",
+            "Lovelace",
+            "555-0100",
+            "ada@example.com",
+            new AddressDto("10 Main St", null, "Boston", "MA", "02101"));
         appService.Setup(item => item.SubmitAsync(applicationId, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new UnitNotAvailableException(10));
+            .ThrowsAsync(new UnitNotAvailableException("The unit is no longer available."));
         appService.Setup(item => item.GetApplicationPageAsync(
                 applicationId,
                 ApplicationSection.Summary,
@@ -266,17 +306,30 @@ public class ApplicationsControllerTests
             .ReturnsAsync(CreatePageDto(
                 applicationId,
                 isEditable: true,
-                currentSection: ApplicationSection.Summary));
+                currentSection: ApplicationSection.Summary,
+                applicantInfo: applicantInfo));
         var controller = new ApplicationsController(appService.Object);
+        var submittedModel = new ApplicationPageViewModel
+        {
+            Status = ApplicationStatus.Approved,
+            IsEditable = false,
+            IsReadyToSubmit = false
+        };
 
         var result = await controller.Edit(
             applicationId,
             ApplicationSection.Summary,
             "submit",
-            new ApplicationPageViewModel(),
+            submittedModel,
             CancellationToken.None);
 
-        result.Should().BeOfType<ViewResult>();
+        var model = result.Should().BeOfType<ViewResult>().Subject.Model
+            .Should().BeOfType<ApplicationPageViewModel>().Subject;
+        model.Status.Should().Be(ApplicationStatus.Draft);
+        model.IsEditable.Should().BeTrue();
+        model.IsReadyToSubmit.Should().BeFalse();
+        model.ApplicantInfo.FirstName.Should().Be("Ada");
+        model.ApplicantInfo.CurrentAddress.ZipCode.Should().Be("02101");
         controller.ModelState[string.Empty]!.Errors.Should().ContainSingle();
     }
 
@@ -351,7 +404,8 @@ public class ApplicationsControllerTests
         Guid applicationId,
         bool isEditable,
         ApplicationStatus status = ApplicationStatus.Draft,
-        ApplicationSection currentSection = ApplicationSection.ApplicantInfo) => new(
+        ApplicationSection currentSection = ApplicationSection.ApplicantInfo,
+        ApplicantInfoDto? applicantInfo = null) => new(
         applicationId,
         status,
         currentSection,
@@ -364,7 +418,8 @@ public class ApplicationsControllerTests
             2,
             1650m,
             "Apartment"),
-        null,
+        false,
+        applicantInfo,
         [],
         false,
         false,

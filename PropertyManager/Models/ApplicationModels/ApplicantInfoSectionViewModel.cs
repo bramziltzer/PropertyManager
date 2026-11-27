@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using PropertyManager.AppService.Applications;
 using PropertyManager.Data.Configurations;
 using PropertyManager.Domain.Rules;
@@ -30,6 +31,7 @@ public sealed class ApplicantInfoSectionViewModel : IValidatableObject
 
     public AddressViewModel CurrentAddress { get; set; } = new();
 
+    [BindNever]
     public bool IsReadOnly { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

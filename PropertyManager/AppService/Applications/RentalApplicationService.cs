@@ -487,6 +487,11 @@ public sealed class RentalApplicationService(
             incompleteSections.Add(ApplicationSection.ApplicantInfo);
         }
 
+        if (!isResidenceHistorySaved)
+        {
+            incompleteSections.Add(ApplicationSection.ResidenceHistory);
+        }
+
         var isEditable = !isManager && ApplicationStatusRules.IsEditable(pageData.Status);
         return new ApplicationPageState(
             isApplicantInfoSaved,

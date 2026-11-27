@@ -283,12 +283,14 @@ public sealed class RentalApplicationService(
         ArgumentNullException.ThrowIfNull(dto);
 
         var application = await LoadOwnedApplicationAsync(applicationId, cancellationToken);
+        var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
         var residence = application.AddResidence(
             dto.Address.ToDomainAddress(),
             dto.LandlordName,
             dto.LandlordPhone,
             dto.MoveInDate,
-            dto.MoveOutDate);
+            dto.MoveOutDate,
+            today);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return residence.ResidenceHistoryId;
@@ -303,13 +305,15 @@ public sealed class RentalApplicationService(
         ArgumentNullException.ThrowIfNull(dto);
 
         var application = await LoadOwnedApplicationAsync(applicationId, cancellationToken);
+        var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);
         application.UpdateResidence(
             residenceHistoryId,
             dto.Address.ToDomainAddress(),
             dto.LandlordName,
             dto.LandlordPhone,
             dto.MoveInDate,
-            dto.MoveOutDate);
+            dto.MoveOutDate,
+            today);
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

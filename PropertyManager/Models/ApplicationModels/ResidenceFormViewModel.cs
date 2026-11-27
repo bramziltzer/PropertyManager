@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using PropertyManager.AppService;
 using PropertyManager.AppService.Applications;
 using PropertyManager.Data.Configurations;
+using PropertyManager.Domain.Rules;
 
 namespace PropertyManager.Models.ApplicationModels;
 
@@ -19,7 +20,6 @@ public sealed class ResidenceFormViewModel : IValidatableObject
     public string LandlordName { get; set; } = string.Empty;
 
     [Required]
-    [Phone]
     [StringLength(ColumnLengths.PhoneNumber)]
     [Display(Name = "Landlord Phone")]
     public string LandlordPhone { get; set; } = string.Empty;
@@ -48,12 +48,34 @@ public sealed class ResidenceFormViewModel : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (!PhoneNumberRules.IsValid(LandlordPhone))
+        {
+            yield return new ValidationResult(
+                "Enter a valid phone number.",
+                [nameof(LandlordPhone)]);
+        }
+
         if (MoveInDate.HasValue &&
             MoveOutDate.HasValue &&
             MoveOutDate.Value < MoveInDate.Value)
         {
             yield return new ValidationResult(
                 "Move-out date cannot be before the move-in date.",
+                [nameof(MoveOutDate)]);
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        if (MoveInDate.HasValue && MoveInDate.Value > today)
+        {
+            yield return new ValidationResult(
+                "Move-in date cannot be in the future.",
+                [nameof(MoveInDate)]);
+        }
+
+        if (MoveOutDate.HasValue && MoveOutDate.Value > today)
+        {
+            yield return new ValidationResult(
+                "Move-out date cannot be in the future.",
                 [nameof(MoveOutDate)]);
         }
     }

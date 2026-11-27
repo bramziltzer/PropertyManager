@@ -58,7 +58,8 @@ public class RentalApplicationSeeder(
                 faker.Name.FullName(),
                 faker.Phone.PhoneNumber("###-###-####"),
                 today.AddYears(-3),
-                today.AddMonths(-1));
+                today.AddMonths(-1),
+                today);
 
             if (seed.Status != ApplicationStatus.Draft)
             {

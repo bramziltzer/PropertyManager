@@ -1,3 +1,6 @@
+using PropertyManager.Domain.Exceptions;
+using PropertyManager.Domain.Rules;
+
 namespace PropertyManager.Domain;
 
 public sealed record ApplicantInfo
@@ -13,6 +16,11 @@ public sealed record ApplicantInfo
         string Email,
         Address CurrentAddress)
     {
+        if (!PhoneNumberRules.IsValid(PhoneNumber))
+        {
+            throw new InvalidPhoneNumberException();
+        }
+
         this.FirstName = FirstName;
         this.LastName = LastName;
         this.PhoneNumber = PhoneNumber;

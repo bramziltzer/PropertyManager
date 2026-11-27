@@ -28,7 +28,7 @@ internal static class TestData
     {
         var application = Draft(unit, applicantId);
         application.SaveApplicantInfo(Info());
-        application.AddResidence(Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null);
+        application.AddResidence(Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null, Today);
         return application;
     }
 

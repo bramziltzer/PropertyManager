@@ -99,7 +99,7 @@ public sealed class RentalApplicationTests
         var application = TestData.Submitted();
         var residence = application.ResidenceHistories.Single();
 
-        application.Invoking(a => a.AddResidence(TestData.Address(), "L", "555", new DateOnly(2020, 1, 1), null))
+        application.Invoking(a => a.AddResidence(TestData.Address(), "L", "555-0100", new DateOnly(2020, 1, 1), null, TestData.Today))
             .Should().Throw<ApplicationNotEditableException>();
         application.Invoking(a => a.        RemoveResidence(residence.ResidenceHistoryId))
             .Should().Throw<ApplicationNotEditableException>();
@@ -122,7 +122,7 @@ public sealed class RentalApplicationTests
         var application = TestData.Draft();
         application.IsResidenceHistorySaved.Should().BeFalse();
 
-        var residence = application.AddResidence(TestData.Address(), "Landlord", "555-0102", new DateOnly(2015, 1, 1), null);
+        var residence = application.AddResidence(TestData.Address(), "Landlord", "555-0102", new DateOnly(2015, 1, 1), null, TestData.Today);
         application.IsResidenceHistorySaved.Should().BeTrue();
 
         application.RemoveResidence(residence.ResidenceHistoryId);
@@ -143,7 +143,8 @@ public sealed class RentalApplicationTests
             "Landlord",
             "555-0102",
             new DateOnly(2020, 1, 1),
-            null);
+            null,
+            TestData.Today);
 
         application.Invoking(item => item.EnsureResidenceHistoryComplete()).Should().NotThrow();
         application.IsResidenceHistorySaved.Should().BeTrue();
@@ -159,7 +160,7 @@ public sealed class RentalApplicationTests
         var application = TestData.Completed();
         var residence = application.ResidenceHistories.Single();
 
-        application.UpdateResidence(residence.ResidenceHistoryId, TestData.Address(), " New Landlord ", "555-0103", new DateOnly(2019, 1, 1), new DateOnly(2020, 1, 1));
+        application.UpdateResidence(residence.ResidenceHistoryId, TestData.Address(), " New Landlord ", "555-0103", new DateOnly(2019, 1, 1), new DateOnly(2020, 1, 1), TestData.Today);
         residence.LandlordName.Should().Be("New Landlord");
         application.IsReadyToSubmit.Should().BeTrue();
 
@@ -173,7 +174,7 @@ public sealed class RentalApplicationTests
         var application = TestData.Completed();
         var unknownId = Guid.NewGuid();
 
-        application.Invoking(a => a.UpdateResidence(unknownId, TestData.Address(), "L", "555", new DateOnly(2019, 1, 1), null))
+        application.Invoking(a => a.UpdateResidence(unknownId, TestData.Address(), "L", "555-0100", new DateOnly(2019, 1, 1), null, TestData.Today))
             .Should().Throw<ResidenceNotFoundException>();
         application.Invoking(a => a.RemoveResidence(unknownId))
             .Should().Throw<ResidenceNotFoundException>();
@@ -184,8 +185,51 @@ public sealed class RentalApplicationTests
     {
         var application = TestData.Draft();
 
-        application.Invoking(a => a.AddResidence(TestData.Address(), "L", "555", new DateOnly(2020, 1, 1), new DateOnly(2019, 1, 1)))
+        application.Invoking(a => a.AddResidence(TestData.Address(), "L", "555-0100", new DateOnly(2020, 1, 1), new DateOnly(2019, 1, 1), TestData.Today))
             .Should().Throw<InvalidResidenceDatesException>();
+    }
+
+    [Fact]
+    public void AddResidence_RejectsFutureDates()
+    {
+        var application = TestData.Draft();
+
+        application.Invoking(a => a.AddResidence(
+                TestData.Address(),
+                "L",
+                "555-0100",
+                TestData.Today.AddDays(1),
+                null,
+                TestData.Today))
+            .Should().Throw<FutureResidenceDateException>();
+
+        application.Invoking(a => a.AddResidence(
+                TestData.Address(),
+                "L",
+                "555-0100",
+                TestData.Today,
+                TestData.Today.AddDays(1),
+                TestData.Today))
+            .Should().Throw<FutureResidenceDateException>();
+    }
+
+    [Fact]
+    public void ApplicantAndResidencePhoneNumbers_MustBeValid()
+    {
+        var application = TestData.Draft();
+
+        application.Invoking(a => a.SaveApplicantInfo(
+                new ApplicantInfo("Ada", "Lovelace", "call-me", "ada@example.com", TestData.Address())))
+            .Should().Throw<InvalidPhoneNumberException>();
+
+        application.Invoking(a => a.AddResidence(
+                TestData.Address(),
+                "L",
+                "call-me",
+                new DateOnly(2020, 1, 1),
+                null,
+                TestData.Today))
+            .Should().Throw<InvalidPhoneNumberException>();
     }
 
     [Fact]

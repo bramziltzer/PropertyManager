@@ -43,7 +43,7 @@ public class RentalUnitServiceTests
         // Active lease covering TestData.Today (2026-06-01)
         var activeApp = RentalApplication.StartDraft(activeLeaseUnit, TestData.ApplicantId, TestData.Today.AddDays(-10));
         activeApp.SaveApplicantInfo(TestData.Info());
-        activeApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null);
+        activeApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null, TestData.Today);
         activeApp.Submit(TestData.ApplicantId, TestData.Now.AddDays(-10), TestData.Today.AddDays(-10));
         activeApp.Approve(TestData.ManagerId, TestData.Now.AddDays(-10), TestData.Today.AddDays(-10));
         dbContext.RentalApplications.Add(activeApp);
@@ -51,7 +51,7 @@ public class RentalUnitServiceTests
         // Future non-current lease starting after TestData.Today
         var futureApp = RentalApplication.StartDraft(futureLeaseUnit, TestData.ApplicantId, TestData.Today);
         futureApp.SaveApplicantInfo(TestData.Info());
-        futureApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null);
+        futureApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null, TestData.Today);
         futureApp.Submit(TestData.ApplicantId, TestData.Now, TestData.Today);
         var futureStart = TestData.Today.AddMonths(1);
         futureApp.Approve(TestData.ManagerId, TestData.Now, futureStart);
@@ -60,7 +60,7 @@ public class RentalUnitServiceTests
         // Expired lease ending before TestData.Today
         var expiredApp = RentalApplication.StartDraft(expiredLeaseUnit, TestData.ApplicantId, TestData.Today.AddYears(-2));
         expiredApp.SaveApplicantInfo(TestData.Info());
-        expiredApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null);
+        expiredApp.AddResidence(TestData.Address(), "Landlord", "555-0101", new DateOnly(2020, 1, 1), null, TestData.Today);
         expiredApp.Submit(TestData.ApplicantId, TestData.Now.AddYears(-2), TestData.Today.AddYears(-2));
         expiredApp.Approve(TestData.ManagerId, TestData.Now.AddYears(-2), TestData.Today.AddYears(-2));
         dbContext.RentalApplications.Add(expiredApp);

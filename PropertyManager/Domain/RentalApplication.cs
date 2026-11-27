@@ -97,10 +97,10 @@ public class RentalApplication
 
     /// <exception cref="ApplicationNotEditableException">Thrown when the application is not in an editable status.</exception>
     /// <exception cref="InvalidResidenceDatesException">Thrown when the move-out date precedes the move-in date.</exception>
-    public ResidenceHistory AddResidence(Address address, string landlordName, string landlordPhone, DateOnly moveInDate, DateOnly? moveOutDate)
+    public ResidenceHistory AddResidence(Address address, string landlordName, string landlordPhone, DateOnly moveInDate, DateOnly? moveOutDate, DateOnly today)
     {
         EnsureEditable();
-        var residence = new ResidenceHistory(address, landlordName, landlordPhone, moveInDate, moveOutDate);
+        var residence = new ResidenceHistory(address, landlordName, landlordPhone, moveInDate, moveOutDate, today);
         _residenceHistories.Add(residence);
         return residence;
     }
@@ -108,11 +108,11 @@ public class RentalApplication
     /// <exception cref="ApplicationNotEditableException">Thrown when the application is not in an editable status.</exception>
     /// <exception cref="ResidenceNotFoundException">Thrown when the application has no residence with the given ID.</exception>
     /// <exception cref="InvalidResidenceDatesException">Thrown when the move-out date precedes the move-in date.</exception>
-    public void UpdateResidence(Guid residenceHistoryId, Address address, string landlordName, string landlordPhone, DateOnly moveInDate, DateOnly? moveOutDate)
+    public void UpdateResidence(Guid residenceHistoryId, Address address, string landlordName, string landlordPhone, DateOnly moveInDate, DateOnly? moveOutDate, DateOnly today)
     {
         EnsureEditable();
         var residence = FindResidence(residenceHistoryId);
-        residence.Update(address, landlordName, landlordPhone, moveInDate, moveOutDate);
+        residence.Update(address, landlordName, landlordPhone, moveInDate, moveOutDate, today);
     }
 
     /// <summary>

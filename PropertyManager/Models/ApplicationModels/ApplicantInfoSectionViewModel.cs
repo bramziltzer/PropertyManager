@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using PropertyManager.AppService.Applications;
 using PropertyManager.Data.Configurations;
+using PropertyManager.Domain.Rules;
 
 namespace PropertyManager.Models.ApplicationModels;
 
-public sealed class ApplicantInfoSectionViewModel
+public sealed class ApplicantInfoSectionViewModel : IValidatableObject
 {
     [Required]
     [StringLength(100)]
@@ -17,7 +18,6 @@ public sealed class ApplicantInfoSectionViewModel
     public string LastName { get; set; } = string.Empty;
 
     [Required]
-    [Phone]
     [StringLength(ColumnLengths.PhoneNumber)]
     [Display(Name = "Phone Number")]
     public string PhoneNumber { get; set; } = string.Empty;
@@ -31,6 +31,16 @@ public sealed class ApplicantInfoSectionViewModel
     public AddressViewModel CurrentAddress { get; set; } = new();
 
     public bool IsReadOnly { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!PhoneNumberRules.IsValid(PhoneNumber))
+        {
+            yield return new ValidationResult(
+                "Enter a valid phone number.",
+                [nameof(PhoneNumber)]);
+        }
+    }
 
     public ApplicantInfoSectionViewModel AsReadOnly() => new()
     {
